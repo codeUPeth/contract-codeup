@@ -1,0 +1,20 @@
+[
+  "constructor(uint256,address,address)",
+  "error AddressEmptyCode(address)",
+  "error AddressInsufficientBalance(address)",
+  "error FailedInnerCall()",
+  "error SafeERC20FailedOperation(address)",
+  "function addCoins(address,uint256)",
+  "function collectMoney()",
+  "function getCoders(address) view returns (uint8[8])",
+  "function getRefEarning(address) view returns (uint256[3], uint256[3])",
+  "function manager() view returns (address)",
+  "function startUNIX() view returns (uint256)",
+  "function totalCoders() view returns (uint256)",
+  "function totalInvested() view returns (uint256)",
+  "function totalTowers() view returns (uint256)",
+  "function towers(address) view returns (uint256, uint256, uint256, uint256, uint256, uint256, address, uint256, uint256)",
+  "function upgradeTower(uint256)",
+  "function usdt() view returns (address)",
+  "function withdrawMoney()"
+]

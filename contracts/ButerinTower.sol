@@ -1,41 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.23;
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Moves a `value` amount of tokens from the caller's account to `to`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address to, uint256 value) external returns (bool);
+//███████████████████████████████████████████████████████████████████████████████
+//█▄─▄─▀█▄─██─▄█─▄─▄─█▄─▄▄─█▄─▄▄▀█▄─▄█▄─▀█▄─▄███─▄─▄─█─▄▄─█▄─█▀▀▀█─▄█▄─▄▄─█▄─▄▄▀█
+//██─▄─▀██─██─████─████─▄█▀██─▄─▄██─███─█▄▀─██████─███─██─██─█─█─█─███─▄█▀██─▄─▄█
+//▀▄▄▄▄▀▀▀▄▄▄▄▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▀▄▄▄▀▀▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀
 
-    /**
-     * @dev Moves a `value` amount of tokens from `from` to `to` using the
-     * allowance mechanism. `value` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external returns (bool);
-
-    /**
-     * @dev Returns the value of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-}
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract ButerinTower {
+    using SafeERC20 for IERC20;
     struct Tower {
         uint256 coins;
         uint256 money;
@@ -46,42 +21,58 @@ contract ButerinTower {
         address ref;
         uint256[3] refs;
         uint256[3] refDeps;
-        uint8[8] chefs;
+        uint8[8] coders;
         uint256 totalCoinsSpend;
         uint256 totalMoneyReceived;
     }
     mapping(address => Tower) public towers;
-    uint256 public totalChefs;
+    uint256 public totalCoders;
     uint256 public totalTowers;
     uint256 public totalInvested;
-    address public manager = 0x222178e4e80fA9C24e4BC55046C6Fb80Af21A4Db;
+    address public immutable manager;
     uint256 public startUNIX;
     uint256[] refPercent = [8, 5, 2];
-    IERC20 usdt = IERC20(0x55d398326f99059fF775485246999027B3197955);
+    IERC20 public immutable usdt;
 
-    constructor(uint256 startDate) {
+    event TowerCreated(address indexed user, address indexed ref);
+    event ProjectFeePaid(address indexed user, uint256 amount);
+    event AddCoins(address indexed user, uint256 amount);
+    event RefEarning(
+        address indexed user,
+        uint256 coinsAmount,
+        uint256 moneyAmount
+    );
+
+    constructor(uint256 startDate, address _manager, address _usdt) {
         require(startDate > 0);
+        require(_manager != address(0) && _usdt != address(0));
         startUNIX = startDate;
+        manager = _manager;
+        usdt = IERC20(_usdt);
     }
 
     function addCoins(address ref, uint256 tokenAmount) public {
-        usdt.transferFrom(msg.sender, address(this), tokenAmount);
+        usdt.safeTransferFrom(msg.sender, address(this), tokenAmount);
         require(block.timestamp > startUNIX, "We are not live yet!");
         uint256 coins = tokenAmount / 1e16;
         require(coins > 0, "Zero coins");
         address user = msg.sender;
+        address managerCache = manager;
         totalInvested += tokenAmount;
         bool isNew;
         if (towers[user].timestamp == 0) {
             totalTowers++;
-            ref = towers[ref].timestamp == 0 ? manager : ref;
+            ref = towers[ref].timestamp == 0 ? managerCache : ref;
             isNew = true;
             towers[user].ref = ref;
             towers[user].timestamp = block.timestamp;
+            emit TowerCreated(user, ref);
         }
         refEarning(user, coins, isNew);
         towers[user].coins += coins;
-        usdt.transfer(manager, (tokenAmount * 10) / 100);
+        emit AddCoins(user, coins);
+        usdt.safeTransfer(managerCache, (tokenAmount * 10) / 100);
+        emit ProjectFeePaid(managerCache, (tokenAmount * 10) / 100);
     }
 
     function refEarning(address user, uint256 coins, bool isNew) internal {
@@ -108,7 +99,7 @@ contract ButerinTower {
         uint256 money = towers[user].money;
         towers[user].money = 0;
         uint256 amount = money * 1e14;
-        usdt.transfer(
+        usdt.safeTransfer(
             user,
             usdt.balanceOf(address(this)) < amount
                 ? usdt.balanceOf(address(this))
@@ -130,21 +121,21 @@ contract ButerinTower {
         address user = msg.sender;
         if (floorId > 0) {
             require(
-                towers[user].chefs[floorId - 1] >= 5,
+                towers[user].coders[floorId - 1] >= 5,
                 "Need to buy previous tower"
             );
         }
         syncTower(user);
-        towers[user].chefs[floorId]++;
-        totalChefs++;
-        uint256 chefs = towers[user].chefs[floorId];
+        towers[user].coders[floorId]++;
+        totalCoders++;
+        uint256 chefs = towers[user].coders[floorId];
         towers[user].coins -= getUpgradePrice(floorId, chefs);
         towers[user].totalCoinsSpend += getUpgradePrice(floorId, chefs);
         towers[user].yield += getYield(floorId, chefs);
     }
 
-    function getChefs(address addr) public view returns (uint8[8] memory) {
-        return towers[addr].chefs;
+    function getCoders(address addr) public view returns (uint8[8] memory) {
+        return towers[addr].coders;
     }
 
     function getRefEarning(
@@ -180,7 +171,7 @@ contract ButerinTower {
                     (towers[user].totalMoneyReceived);
                 towers[user].yield = 0;
                 for (uint8 i = 0; i < 8; i++) {
-                    towers[user].chefs[i] = 0;
+                    towers[user].coders[i] = 0;
                 }
             } else {
                 towers[user].money2 += yield;
