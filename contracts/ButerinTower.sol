@@ -42,6 +42,21 @@ contract ButerinTower {
         uint256 coinsAmount,
         uint256 moneyAmount
     );
+    event Withdraw(address user, uint256 amount);
+    event CollectMoney(address user, uint256 amount);
+    event UpgradeTower(
+        address user,
+        uint256 floorId,
+        uint256 coins,
+        uint256 yield
+    );
+    event SyncTower(
+        address user,
+        uint256 yield,
+        uint256 hrs,
+        uint256 date,
+        bool isCleanCoders
+    );
 
     constructor(uint256 startDate, address _manager, address _usdt) {
         require(startDate > 0);
@@ -51,10 +66,10 @@ contract ButerinTower {
         usdt = IERC20(_usdt);
     }
 
-    function addCoins(address ref, uint256 tokenAmount) public {
+    function addCoins(address ref, uint256 tokenAmount) external {
         usdt.safeTransferFrom(msg.sender, address(this), tokenAmount);
         require(block.timestamp > startUNIX, "We are not live yet!");
-        uint256 coins = tokenAmount / 1e16;
+        uint256 coins = tokenAmount / 1e4;
         require(coins > 0, "Zero coins");
         address user = msg.sender;
         address managerCache = manager;
@@ -86,15 +101,18 @@ contract ButerinTower {
                 towers[ref].refs[i]++;
             }
             uint256 refTemp = (coins * refPercent[i]) / 100;
-            towers[ref].coins += (refTemp * 70) / 100;
-            towers[ref].money += (refTemp * 100 * 30) / 100;
+            uint256 coinsAmount = (refTemp * 70) / 100;
+            uint256 money = (refTemp * 100 * 30) / 100;
+            towers[ref].coins += coinsAmount;
+            towers[ref].money += money;
             towers[ref].refDeps[i] += refTemp;
             i++;
             ref = towers[ref].ref;
+            emit RefEarning(ref, coinsAmount, money);
         }
     }
 
-    function withdrawMoney() public {
+    function withdrawMoney() external {
         address user = msg.sender;
         uint256 money = towers[user].money;
         towers[user].money = 0;
@@ -105,18 +123,20 @@ contract ButerinTower {
                 ? usdt.balanceOf(address(this))
                 : amount
         );
+        emit Withdraw(user, money);
     }
 
-    function collectMoney() public {
+    function collectMoney() external {
         address user = msg.sender;
         syncTower(user);
         towers[user].hrs = 0;
-        towers[user].money += towers[user].money2;
-
+        uint256 collect = towers[user].money2;
+        towers[user].money += collect;
         towers[user].money2 = 0;
+        emit CollectMoney(user, collect);
     }
 
-    function upgradeTower(uint256 floorId) public {
+    function upgradeTower(uint256 floorId) external {
         require(floorId < 8, "Max 8 floors");
         address user = msg.sender;
         if (floorId > 0) {
@@ -129,9 +149,12 @@ contract ButerinTower {
         towers[user].coders[floorId]++;
         totalCoders++;
         uint256 chefs = towers[user].coders[floorId];
-        towers[user].coins -= getUpgradePrice(floorId, chefs);
-        towers[user].totalCoinsSpend += getUpgradePrice(floorId, chefs);
-        towers[user].yield += getYield(floorId, chefs);
+        uint256 coinsSpend = getUpgradePrice(floorId, chefs);
+        towers[user].coins -= coinsSpend;
+        towers[user].totalCoinsSpend += coinsSpend;
+        uint256 yield = getYield(floorId, chefs);
+        towers[user].yield += yield;
+        emit UpgradeTower(msg.sender, floorId, coinsSpend, yield);
     }
 
     function getCoders(address addr) public view returns (uint8[8] memory) {
@@ -163,19 +186,19 @@ contract ButerinTower {
                 (towers[user].totalMoneyReceived + yield) >
                 ((towers[user].totalCoinsSpend) * 200)
             ) {
-                towers[user].money2 +=
-                    (towers[user].totalCoinsSpend * 200) -
+                uint256 moneyAmount = (towers[user].totalCoinsSpend * 200) -
                     (towers[user].totalMoneyReceived);
-                towers[user].totalMoneyReceived +=
-                    (towers[user].totalCoinsSpend * 200) -
-                    (towers[user].totalMoneyReceived);
+                towers[user].money2 += moneyAmount;
+                towers[user].totalMoneyReceived += moneyAmount;
                 towers[user].yield = 0;
                 for (uint8 i = 0; i < 8; i++) {
                     towers[user].coders[i] = 0;
                 }
+                emit SyncTower(user, moneyAmount, hrs, block.timestamp, true);
             } else {
                 towers[user].money2 += yield;
                 towers[user].totalMoneyReceived += yield;
+                emit SyncTower(user, yield, hrs, block.timestamp, false);
             }
             towers[user].hrs += hrs;
         }
