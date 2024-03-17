@@ -6,50 +6,94 @@ pragma solidity 0.8.23;
 //██─▄─▀██─██─████─████─▄█▀██─▄─▄██─███─█▄▀─██████─███─██─██─█─█─█─███─▄█▀██─▄─▄█
 //▀▄▄▄▄▀▀▀▄▄▄▄▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▀▄▄▄▀▀▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/// @title ButerinTower contract
+/// @notice This contract is used for the ButerinTower game
 contract ButerinTower {
     using SafeERC20 for IERC20;
     struct Tower {
-        uint256 coins;
-        uint256 money;
-        uint256 money2;
-        uint256 yield;
-        uint256 timestamp;
-        uint256 hrs;
-        address ref;
-        uint256[3] refs;
-        uint256[3] refDeps;
-        uint8[8] coders;
-        uint256 totalCoinsSpend;
-        uint256 totalMoneyReceived;
+        uint256 coins; /// @notice User's coins balance
+        uint256 money; /// @notice User's money balance
+        uint256 money2; /// @notice User's earned money balance
+        uint256 yield; /// @notice User's yield
+        uint256 timestamp; /// @notice User's registration timestamp
+        uint256 hrs; /// @notice User's hours in the tower
+        address ref; /// @notice User's referrer
+        uint256[3] refs; /// @notice User's refs count
+        uint256[3] refDeps; /// @notice User's refs earnings
+        uint8[8] coders; /// @notice User's coders count on each floor
+        uint256 totalCoinsSpend; /// @notice User's total coins spend
+        uint256 totalMoneyReceived; /// @notice User's total money received
     }
+    /// @notice User's tower info
     mapping(address => Tower) public towers;
+    /// @notice Total coders count
     uint256 public totalCoders;
+    /// @notice Total towers count
     uint256 public totalTowers;
+    /// @notice Total invested amount
     uint256 public totalInvested;
+    /// @notice Manager address
     address public immutable manager;
+    /// @notice Start date
     uint256 public startUNIX;
+    /// @notice Referral percents
     uint256[] refPercent = [8, 5, 2];
+    /// @notice USDT token
     IERC20 public immutable usdt;
 
+    /// @notice Emmited when user created tower
+    /// @param user User's address
+    /// @param ref User's referrer address
     event TowerCreated(address indexed user, address indexed ref);
+    /// @notice Emmited when user paid project fee
+    /// @param user User's address
+    /// @param amount Fee amount
     event ProjectFeePaid(address indexed user, uint256 amount);
-    event AddCoins(address indexed user, uint256 amount);
+    /// @notice Emmited when user added coins
+    /// @param user User's address
+    /// @param coinsAmount Coins amount
+    /// @param moneyAmount Money amount
+    event AddCoins(
+        address indexed user,
+        uint256 coinsAmount,
+        uint256 moneyAmount
+    );
+    /// @notice Emmited when user earned referral
+    /// @param user User's address
+    /// @param coinsAmount Coins amount
     event RefEarning(
         address indexed user,
         uint256 coinsAmount,
         uint256 moneyAmount
     );
+    /// @notice Emmited when user withdraw money
+    /// @param user User's address
+    /// @param amount Money amount
     event Withdraw(address user, uint256 amount);
+    /// @notice Emmited when user collect earned money
+    /// @param user User's address
+    /// @param amount Money amount
     event CollectMoney(address user, uint256 amount);
+    /// @notice Emmited when user upgrade tower
+    /// @param user User's address
+    /// @param floorId Floor id
+    /// @param coins Coins amount
+    /// @param yield Yield amount
     event UpgradeTower(
         address user,
         uint256 floorId,
         uint256 coins,
         uint256 yield
     );
+    /// @notice Emmited when user sync tower
+    /// @param user User's address
+    /// @param yield Yield amount
+    /// @param hrs Hours amount
+    /// @param date Date
+    /// @param isCleanCoders Is clean coders
     event SyncTower(
         address user,
         uint256 yield,
@@ -58,14 +102,21 @@ contract ButerinTower {
         bool isCleanCoders
     );
 
-    constructor(uint256 startDate, address _manager, address _usdt) {
-        require(startDate > 0);
+    /// @notice Contract constructor
+    /// @param _startDate Start date
+    /// @param _manager Manager address
+    /// @param _usdt USDT token address
+    constructor(uint256 _startDate, address _manager, address _usdt) {
+        require(_startDate > 0);
         require(_manager != address(0) && _usdt != address(0));
-        startUNIX = startDate;
+        startUNIX = _startDate;
         manager = _manager;
         usdt = IERC20(_usdt);
     }
 
+    /// @notice Add coins to the tower
+    /// @param ref Referrer address
+    /// @param tokenAmount Token amount
     function addCoins(address ref, uint256 tokenAmount) external {
         usdt.safeTransferFrom(msg.sender, address(this), tokenAmount);
         require(block.timestamp > startUNIX, "We are not live yet!");
@@ -85,11 +136,15 @@ contract ButerinTower {
         }
         refEarning(user, coins, isNew);
         towers[user].coins += coins;
-        emit AddCoins(user, coins);
+        emit AddCoins(user, coins, tokenAmount);
         usdt.safeTransfer(managerCache, (tokenAmount * 10) / 100);
         emit ProjectFeePaid(managerCache, (tokenAmount * 10) / 100);
     }
 
+    /// @notice Internal function for ref earning calculation
+    /// @param user User's address
+    /// @param coins Coins amount
+    /// @param isNew Is new user
     function refEarning(address user, uint256 coins, bool isNew) internal {
         uint8 i = 0;
         address ref = towers[user].ref;
@@ -112,6 +167,7 @@ contract ButerinTower {
         }
     }
 
+    /// @notice Withdraw earned money from the tower
     function withdrawMoney() external {
         address user = msg.sender;
         uint256 money = towers[user].money;
@@ -126,6 +182,7 @@ contract ButerinTower {
         emit Withdraw(user, money);
     }
 
+    /// @notice Collect earned money from the tower to game balance
     function collectMoney() external {
         address user = msg.sender;
         syncTower(user);
@@ -136,6 +193,8 @@ contract ButerinTower {
         emit CollectMoney(user, collect);
     }
 
+    /// @notice Upgrade tower
+    /// @param floorId Floor id
     function upgradeTower(uint256 floorId) external {
         require(floorId < 8, "Max 8 floors");
         address user = msg.sender;
@@ -157,10 +216,14 @@ contract ButerinTower {
         emit UpgradeTower(msg.sender, floorId, coinsSpend, yield);
     }
 
+    /// @notice Get user tower coders info
+    /// @param addr User's address
     function getCoders(address addr) public view returns (uint8[8] memory) {
         return towers[addr].coders;
     }
 
+    /// @notice Get user ref earning info
+    /// @param addr User's address
     function getRefEarning(
         address addr
     )
@@ -171,6 +234,8 @@ contract ButerinTower {
         return (towers[addr].refDeps, towers[addr].refs);
     }
 
+    /// @notice Sync user tower info
+    /// @param user User's address
     function syncTower(address user) internal {
         require(towers[user].timestamp > 0, "User is not registered");
         if (towers[user].yield > 0) {
@@ -205,6 +270,9 @@ contract ButerinTower {
         towers[user].timestamp = block.timestamp;
     }
 
+    /// @notice Helper function for getting upgrade price for the floor and chef
+    /// @param floorId Floor id
+    /// @param chefId Chef id
     function getUpgradePrice(
         uint256 floorId,
         uint256 chefId
@@ -237,6 +305,9 @@ contract ButerinTower {
         revert("Incorrect chefId");
     }
 
+    /// @notice Helper function for getting yield for the floor and chef
+    /// @param floorId Floor id
+    /// @param chefId Chef id
     function getYield(
         uint256 floorId,
         uint256 chefId
