@@ -1,4 +1,24 @@
-# buterin-tower Smart Contracts
+## ButerinTower Smart Contract
+
+Welcome to **ButerinTower**, your portal to Ethereum's rich history and promising future! 🏰🚀
+
+### Game Mechanics
+
+1. **Building Towers**: Immerse yourself in Ethereum's journey by purchasing tower floors using **Stablecoin**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆💼
+
+2. **Earning Rewards**: Your tower generates rewards in **Gas Coin** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨
+
+3. **Referral Bonuses**: Expand your network and earn extra rewards! Invite friends to join and receive bonuses whenever they make a purchase. Together, unlock Ethereum's secrets and bask in its riches! 🎉👫
+
+### Smart Contract Features
+
+- **Tower Management**: Monitor your tower's progress, including Gas Coin balance, earned rewards, coder count, and more. Dive deep into Ethereum's past, present, and future with each floor you unlock! 📊🏰
+
+- **Referral Program**: Enjoy multi-level referral bonuses to amplify your earnings. Collaborate with your network to unravel Ethereum's mysteries and unlock its full potential! 🤝💎
+
+- **Upgrade System**: Enhance your tower's capabilities by upgrading floors and adding more coders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
+
+Embark on an unforgettable journey through Ethereum's past, present, and future with ButerinTower! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
 
 ## Technical Stack
 
@@ -64,7 +84,7 @@ yarn coverage
 yarn compile
 ```
 
-### Deployment CryptoPlatform
+### Deployment Buterin Tower
 
 To deploy contracts you need set up `.env`
 
