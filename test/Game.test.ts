@@ -310,4 +310,40 @@ describe("CryptoPlatform tests", function () {
       expect(balanceAfter).to.be.gte(balanceBefore);
     });
   });
+  describe("Game flow v2", async () => {
+    it("should increase time for 16 hours and collect money for player2", async () => {
+      const towerInfoBefore = await gameContract.towers(player2.address);
+      await ethers.provider.send("evm_increaseTime", [16 * 60 * 60]);
+      await ethers.provider.send("evm_mine", []);
+
+      await gameContract.connect(player2).collectMoney();
+      const towerInfoAfter = await gameContract.towers(player2.address);
+      expect(towerInfoAfter.money2).to.be.equal(BigNumber.from(0));
+      expect(towerInfoAfter.money).to.be.gt(towerInfoBefore.money);
+    });
+    it("buy coins again for player2", async () => {
+      const usdtAmount = ethers.utils.parseUnits("1000", 6);
+      await usdt.transfer(player2.address, usdtAmount);
+      await usdt.connect(player2).approve(gameContract.address, usdtAmount);
+      const predictedFee = calcManagerFee(usdtAmount);
+      const managerBalanceBefore = await usdt.balanceOf(manager.address);
+      await gameContract
+        .connect(player2)
+        .addCoins(ethers.constants.AddressZero, usdtAmount);
+      const managerBalanceAfter = await usdt.balanceOf(manager.address);
+      expect(managerBalanceAfter).to.equal(
+        managerBalanceBefore.add(predictedFee)
+      );
+    });
+    it("collect money for all users", async () => {
+      for (let k = 0; k < 10; k++) {
+        await gameContract.connect(accounts[k]).collectMoney();
+      }
+    });
+    it("should withdraw money for all users", async () => {
+      for (let k = 0; k < 16; k++) {
+        await gameContract.connect(accounts[k]).withdrawMoney();
+      }
+    });
+  });
 });
