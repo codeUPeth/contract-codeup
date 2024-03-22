@@ -4,9 +4,7 @@ Welcome to **💎 ButerinTower 💎**, your portal to Ethereum's rich history an
 
 ### 🎮 Game Mechanics 🎮
 
-1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey✈️💵 by purchasing tower floors using **ETH💎**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆💼
-
-The Buterin Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled coders 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five coders 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
+1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey✈️💵 by purchasing tower floors using **ETH💎**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆 The Buterin Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled coders 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five coders 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
 
 2. **💰 Earning Rewards 💰**: Your tower generates rewards in **Gas Coin 💵** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨
    ⚠️ Users must collect their earned rewards at least once every 24 hours to avoid missing out on potential rewards.⚠️
