@@ -1,37 +1,40 @@
-## ButerinTower Smart Contract
+## 💎 ButerinTower Smart Contract 💎
 
-Welcome to **ButerinTower**, your portal to Ethereum's rich history and promising future! 🏰🚀
+Welcome to **💎 ButerinTower 💎**, your portal to Ethereum's rich history and promising future! 🏰🚀
 
-### Game Mechanics
+### 🎮 Game Mechanics 🎮
 
-1. **Building Towers**: Immerse yourself in Ethereum's journey by purchasing tower floors using **Stablecoin**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆💼
+1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey✈️💵 by purchasing tower floors using **ETH💎**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆💼
 
-2. **Earning Rewards**: Your tower generates rewards in **Gas Coin** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨
+The Buterin Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled coders 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five coders 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
 
-3. **Referral Bonuses**: Expand your network and earn extra rewards! Invite friends to join and receive bonuses whenever they make a purchase. Together, unlock Ethereum's secrets and bask in its riches! 🎉👫
+2. **💰 Earning Rewards 💰**: Your tower generates rewards in **Gas Coin 💵** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨
+   ⚠️ Users must collect their earned rewards at least once every 24 hours to avoid missing out on potential rewards.⚠️
 
-### Smart Contract Features
+3. **🧑‍🤝‍🧑 Referral Bonuses 🧑‍🤝‍🧑**: Expand your network and earn extra rewards 🤑💰! Invite friends to join and receive bonuses$ whenever they make a purchase of game coins. Together, unlock Ethereum's secrets and bask in its riches! 🎉👫
 
-- **Tower Management**: Monitor your tower's progress, including Gas Coin balance, earned rewards, coder count, and more. Dive deep into Ethereum's past, present, and future with each floor you unlock! 📊🏰
+### 🌟 Smart Contract Features 🌟
 
-- **Referral Program**: Enjoy multi-level referral bonuses to amplify your earnings. Collaborate with your network to unravel Ethereum's mysteries and unlock its full potential! 🤝💎
+- **👨‍💼 Tower Management 👨‍💼**: Monitor your tower's progress, including Gas Coin balance, earned rewards, coder's count, and more. Dive deep into Ethereum's past, present, and future with each floor you unlock! 📊🏰
 
-- **Upgrade System**: Enhance your tower's capabilities by upgrading floors and adding more coders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
+- **🖇 Referral Program 🖇**: Enjoy multi-level referral bonuses to amplify your earnings. Collaborate with your network to unravel Ethereum's mysteries and unlock its full potential! 🤝💎
+
+- **🔝 Upgrade System 🔝**: Enhance your tower's capabilities by upgrading floors and adding more coders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
 
 Embark on an unforgettable journey through Ethereum's past, present, and future with ButerinTower! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
 
-## Technical Stack
+## 📚 Technical Stack 📚
 
-- Solidity
-- Hardhat
-- JavaScript
-- TypeScript
-- Ethers.js
-- solidity-coverage
-- Mocha
-- Chai
+- Solidity 💪
+- Hardhat 🎩
+- JavaScript 🇯
+- TypeScript 🇹
+- Ethers.js ♢
+- solidity-coverage 💯
+- Mocha 🧑‍💻
+- Chai 👨🏻‍💻
 
-## Installation
+## ⌛ Installation ⌛
 
 It is recommended to install [Yarn](https://classic.yarnpkg.com) through the `npm` package manager, which comes bundled with [Node.js](https://nodejs.org) when you install it on your system. It is recommended to use a Node.js version `>= 16.0.0`.
 
@@ -47,7 +50,7 @@ After having installed Yarn, simply run:
 yarn install
 ```
 
-## `.env` File
+## 🤫 `.env` File 🤫
 
 In the `.env` file place the private key of your wallet in the `PRIVATE_KEY` section. This allows secure access to your wallet to use with both testnet and mainnet funds during Hardhat deployments. For more information on how this works, please read the documentation of the `npm` package [`dotenv`](https://www.npmjs.com/package/dotenv).
 
@@ -60,11 +63,13 @@ In the `.env` file place the private key of your wallet in the `PRIVATE_KEY` sec
 
 You can see an example of the `.env` file in the `.env.example` file.
 
-## Contracts
+## 📜 Contracts 📜
 
 Project smart contracts:
 
-### Testing
+- **ButerinTower.sol** - Main contract of the game.
+
+### ✔️ Testing ✔️
 
 1. To run TypeScript tests:
 
@@ -78,13 +83,13 @@ yarn test:hh
 yarn coverage
 ```
 
-### Compilation
+### 💽 Compilation 💽
 
 ```bash
 yarn compile
 ```
 
-### Deployment Buterin Tower
+### 🚀 Deployment Buterin Tower 🚀
 
 To deploy contracts you need set up `.env`
 
@@ -105,7 +110,7 @@ or
 npx hardhat run --network [Network] scripts/deploy.ts
 ```
 
-## Contract Verification
+## Contract Verification 「✔ ᵛᵉʳᶦᶠᶦᵉᵈ」
 
 Change the contract address to your contract after the deployment has been successful. This works for both testnet and mainnet. You will need to get an API key from [etherscan](https://etherscan.io), [snowtrace](https://snowtrace.io) etc.
 
