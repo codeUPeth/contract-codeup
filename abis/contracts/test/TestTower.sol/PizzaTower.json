@@ -1,0 +1,13 @@
+[
+  "function addCoins(address) payable",
+  "function collectMoney()",
+  "function getChefs(address) view returns (uint8[8])",
+  "function manager() view returns (address)",
+  "function sellTower()",
+  "function totalChefs() view returns (uint256)",
+  "function totalInvested() view returns (uint256)",
+  "function totalTowers() view returns (uint256)",
+  "function towers(address) view returns (uint256, uint256, uint256, uint256, uint256, uint256, address, uint256, uint256)",
+  "function upgradeTower(uint256)",
+  "function withdrawMoney()"
+]

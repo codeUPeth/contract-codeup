@@ -6,13 +6,9 @@ pragma solidity 0.8.23;
 //██─▄─▀██─██─████─████─▄█▀██─▄─▄██─███─█▄▀─██████─███─██─██─█─█─█─███─▄█▀██─▄─▄█
 //▀▄▄▄▄▀▀▀▄▄▄▄▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▀▄▄▄▀▀▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 /// @title ButerinTower contract
 /// @notice This contract is used for the ButerinTower game
 contract ButerinTower {
-    using SafeERC20 for IERC20;
     struct Tower {
         uint256 coins; /// @notice User's coins balance
         uint256 money; /// @notice User's money balance
@@ -23,7 +19,7 @@ contract ButerinTower {
         address ref; /// @notice User's referrer
         uint256[3] refs; /// @notice User's refs count
         uint256[3] refDeps; /// @notice User's refs earnings
-        uint8[8] coders; /// @notice User's coders count on each floor
+        uint16[8] coders; /// @notice User's coders count on each floor
         uint256 totalCoinsSpend; /// @notice User's total coins spend
         uint256 totalMoneyReceived; /// @notice User's total money received
     }
@@ -35,14 +31,14 @@ contract ButerinTower {
     uint256 public totalTowers;
     /// @notice Total invested amount
     uint256 public totalInvested;
+    uint256 public coinsPrice;
+    uint256 public moneyRate;
     /// @notice Manager address
     address public immutable manager;
     /// @notice Start date
     uint256 public startUNIX;
     /// @notice Referral percents
     uint256[] refPercent = [8, 5, 2];
-    /// @notice USDT token
-    IERC20 public immutable usdt;
 
     /// @notice Emmited when user created tower
     /// @param user User's address
@@ -93,34 +89,27 @@ contract ButerinTower {
     /// @param yield Yield amount
     /// @param hrs Hours amount
     /// @param date Date
-    /// @param isCleanCoders Is clean coders
-    event SyncTower(
-        address user,
-        uint256 yield,
-        uint256 hrs,
-        uint256 date,
-        bool isCleanCoders
-    );
+    event SyncTower(address user, uint256 yield, uint256 hrs, uint256 date);
 
     /// @notice Contract constructor
     /// @param _startDate Start date
     /// @param _manager Manager address
-    /// @param _usdt USDT token address
-    constructor(uint256 _startDate, address _manager, address _usdt) {
+    constructor(uint256 _startDate, address _manager, uint256 _coinsPrice) {
+        require(_coinsPrice > 0);
         require(_startDate > 0);
-        require(_manager != address(0) && _usdt != address(0));
+        require(_manager != address(0));
         startUNIX = _startDate;
         manager = _manager;
-        usdt = IERC20(_usdt);
+        coinsPrice = _coinsPrice;
+        moneyRate = _coinsPrice / 100;
     }
 
     /// @notice Add coins to the tower
     /// @param ref Referrer address
-    /// @param tokenAmount Token amount
-    function addCoins(address ref, uint256 tokenAmount) external {
-        usdt.safeTransferFrom(msg.sender, address(this), tokenAmount);
+    function addCoins(address ref) external payable {
+        uint256 tokenAmount = msg.value;
         require(block.timestamp > startUNIX, "We are not live yet!");
-        uint256 coins = tokenAmount / 1e4;
+        uint256 coins = tokenAmount / coinsPrice;
         require(coins > 0, "Zero coins");
         address user = msg.sender;
         address managerCache = manager;
@@ -137,7 +126,8 @@ contract ButerinTower {
         refEarning(user, coins, isNew);
         towers[user].coins += coins;
         emit AddCoins(user, coins, tokenAmount);
-        usdt.safeTransfer(managerCache, (tokenAmount * 10) / 100);
+        sendNative(managerCache, (tokenAmount * 10) / 100);
+
         emit ProjectFeePaid(managerCache, (tokenAmount * 10) / 100);
     }
 
@@ -170,16 +160,13 @@ contract ButerinTower {
     /// @notice Withdraw earned money from the tower
     function withdrawMoney() external {
         address user = msg.sender;
-        uint256 money = towers[user].money;
+        uint256 money = towers[user].money * moneyRate;
+        uint256 amount = address(this).balance < money
+            ? address(this).balance
+            : money;
         towers[user].money = 0;
-        uint256 amount = money * 1e14;
-        usdt.safeTransfer(
-            user,
-            usdt.balanceOf(address(this)) < amount
-                ? usdt.balanceOf(address(this))
-                : amount
-        );
-        emit Withdraw(user, money);
+        sendNative(user, amount);
+        emit Withdraw(user, amount);
     }
 
     /// @notice Collect earned money from the tower to game balance
@@ -218,7 +205,7 @@ contract ButerinTower {
 
     /// @notice Get user tower coders info
     /// @param addr User's address
-    function getCoders(address addr) public view returns (uint8[8] memory) {
+    function getCoders(address addr) public view returns (uint16[8] memory) {
         return towers[addr].coders;
     }
 
@@ -247,27 +234,22 @@ contract ButerinTower {
                 hrs = 24 - towers[user].hrs;
             }
             uint256 yield = hrs * towers[user].yield;
-            if (
-                (towers[user].totalMoneyReceived + yield) >
-                ((towers[user].totalCoinsSpend) * 200)
-            ) {
-                uint256 moneyAmount = (towers[user].totalCoinsSpend * 200) -
-                    (towers[user].totalMoneyReceived);
-                towers[user].money2 += moneyAmount;
-                towers[user].totalMoneyReceived += moneyAmount;
-                towers[user].yield = 0;
-                for (uint8 i = 0; i < 8; i++) {
-                    towers[user].coders[i] = 0;
-                }
-                emit SyncTower(user, moneyAmount, hrs, block.timestamp, true);
-            } else {
-                towers[user].money2 += yield;
-                towers[user].totalMoneyReceived += yield;
-                emit SyncTower(user, yield, hrs, block.timestamp, false);
-            }
+
+            towers[user].money2 += yield;
+            towers[user].totalMoneyReceived += yield;
             towers[user].hrs += hrs;
+            emit SyncTower(user, yield, hrs, block.timestamp);
         }
         towers[user].timestamp = block.timestamp;
+    }
+
+    /// @notice This function sends native chain token.
+    /// @param to_ - address of receiver
+    /// @param amount_ - amount of native chain token
+    /// @dev If the transfer fails, the function reverts.
+    function sendNative(address to_, uint256 amount_) internal {
+        (bool success, ) = to_.call{value: amount_}("");
+        require(success, "Transfer failed.");
     }
 
     /// @notice Helper function for getting upgrade price for the floor and chef

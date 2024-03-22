@@ -3,23 +3,24 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
-import { ButerinTower, USDT } from "../typechain-types";
+import { ButerinTower } from "../typechain-types";
+
+const COINS_PRICE = ethers.utils.parseEther("0.000001");
 
 const getCurrentTimeStamp = async () => {
   const block = await ethers.provider.getBlock("latest");
   return block.timestamp;
 };
 
-const convertUSDTtoCoin = (usdtAmount: BigNumber) => {
-  return usdtAmount.div(ethers.utils.parseUnits("1", 4));
+const convertETHtoCoin = (ethAmount: BigNumber) => {
+  return ethAmount.div(COINS_PRICE);
 };
 
-const calcManagerFee = (usdtAmount: BigNumber) => {
-  return usdtAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
+const calcManagerFee = (ethAmount: BigNumber) => {
+  return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
 };
 describe("CryptoPlatform tests", function () {
   let gameContract: ButerinTower;
-  let usdt: USDT;
   let manager: SignerWithAddress;
   let player1: SignerWithAddress;
   let player2: SignerWithAddress;
@@ -34,65 +35,56 @@ describe("CryptoPlatform tests", function () {
     accounts = others;
 
     const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
-    const USDT_FACTORY = await ethers.getContractFactory("USDT");
-    usdt = await USDT_FACTORY.deploy(
-      "USDT Coin",
-      "USDT",
-      6,
-      ethers.utils.parseUnits("1000000", 6)
-    );
-    await usdt.deployed();
 
     gameContract = (await GAME_FACTORY.deploy(
       1,
       manager.address,
-      usdt.address
+      COINS_PRICE
     )) as ButerinTower;
     await gameContract.deployed();
   });
   describe("Deployment", async () => {
     it("should revert deploy if start time is 0", async () => {
       const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
-      await expect(GAME_FACTORY.deploy(0, manager.address, usdt.address)).to.be
+      await expect(GAME_FACTORY.deploy(0, manager.address, COINS_PRICE)).to.be
         .reverted;
     });
     it("should revert deploy if manager is zero address", async () => {
       const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
       await expect(
-        GAME_FACTORY.deploy(1, ethers.constants.AddressZero, usdt.address)
-      ).to.be.reverted;
-    });
-    it("should revert deploy if usdt is zero address", async () => {
-      const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
-      await expect(
-        GAME_FACTORY.deploy(1, manager.address, ethers.constants.AddressZero)
+        GAME_FACTORY.deploy(1, ethers.constants.AddressZero, COINS_PRICE)
       ).to.be.reverted;
     });
   });
   describe("Game flow", async () => {
     it("should build a tower and pay fee for manager", async () => {
-      const usdtAmount = ethers.utils.parseUnits("1000", 6);
-      await usdt.transfer(player1.address, usdtAmount);
-      await usdt.connect(player1).approve(gameContract.address, usdtAmount);
-      const predictedCoinsAmount = convertUSDTtoCoin(usdtAmount);
-      const predictedFee = calcManagerFee(usdtAmount);
-      const managerBalanceBefore = await usdt.balanceOf(manager.address);
+      const ethAmount = ethers.utils.parseEther("1");
+      const predictedCoinsAmount = convertETHtoCoin(ethAmount);
+      const predictedFee = calcManagerFee(ethAmount);
+      const managerBalanceBefore = await ethers.provider.getBalance(
+        manager.address
+      );
       await gameContract
         .connect(player1)
-        .addCoins(ethers.constants.AddressZero, usdtAmount);
-      const managerBalanceAfter = await usdt.balanceOf(manager.address);
+        .addCoins(ethers.constants.AddressZero, { value: ethAmount });
+      const managerBalanceAfter = await ethers.provider.getBalance(
+        manager.address
+      );
       expect(managerBalanceAfter).to.equal(
         managerBalanceBefore.add(predictedFee)
       );
+
       const tower = await gameContract.towers(player1.address);
       expect(tower.coins).to.equal(predictedCoinsAmount);
       expect(tower.ref).to.be.equals(manager.address);
       expect(await gameContract.totalTowers()).to.equal(BigNumber.from(1));
-      expect(await gameContract.totalInvested()).to.be.equal(usdtAmount);
+      expect(await gameContract.totalInvested()).to.be.equal(ethAmount);
     });
     it("should revert buy coins if amount is zero", async () => {
       await expect(
-        gameContract.connect(player1).addCoins(ethers.constants.AddressZero, 0)
+        gameContract
+          .connect(player1)
+          .addCoins(ethers.constants.AddressZero, { value: 0 })
       ).to.be.revertedWith("Zero coins");
     });
     it("should revert buy coins if game not started", async () => {
@@ -101,40 +93,46 @@ describe("CryptoPlatform tests", function () {
       const game = await gameFactorty.deploy(
         currentTime + 60 * 60 * 24 * 30,
         manager.address,
-        usdt.address
+        COINS_PRICE
       );
       await game.deployed();
 
-      const usdtAmount = ethers.utils.parseUnits("1000", 6);
-      await usdt.transfer(player1.address, usdtAmount);
-      await usdt.connect(player1).approve(game.address, usdtAmount);
+      const ethAmount = ethers.utils.parseEther("1");
       await expect(
-        game.connect(player1).addCoins(ethers.constants.AddressZero, usdtAmount)
+        game
+          .connect(player1)
+          .addCoins(ethers.constants.AddressZero, { value: ethAmount })
       ).to.be.revertedWith("We are not live yet!");
     });
     it("buy coins again for player1", async () => {
-      const usdtAmount = ethers.utils.parseUnits("1000", 6);
-      await usdt.transfer(player1.address, usdtAmount);
-      await usdt.connect(player1).approve(gameContract.address, usdtAmount);
-      const predictedFee = calcManagerFee(usdtAmount);
-      const managerBalanceBefore = await usdt.balanceOf(manager.address);
+      const ethAmount = ethers.utils.parseEther("1");
+      const predictedFee = calcManagerFee(ethAmount);
+      const managerBalanceBefore = await ethers.provider.getBalance(
+        manager.address
+      );
       await gameContract
         .connect(player1)
-        .addCoins(ethers.constants.AddressZero, usdtAmount);
-      const managerBalanceAfter = await usdt.balanceOf(manager.address);
+        .addCoins(ethers.constants.AddressZero, { value: ethAmount });
+      const managerBalanceAfter = await ethers.provider.getBalance(
+        manager.address
+      );
       expect(managerBalanceAfter).to.equal(
         managerBalanceBefore.add(predictedFee)
       );
     });
     it("buy coins for player2, ref = player1", async () => {
-      const usdtAmount = ethers.utils.parseUnits("1000", 6);
-      await usdt.transfer(player2.address, usdtAmount);
-      await usdt.connect(player2).approve(gameContract.address, usdtAmount);
-      const predictedCoinsAmount = convertUSDTtoCoin(usdtAmount);
-      const predictedFee = calcManagerFee(usdtAmount);
-      const managerBalanceBefore = await usdt.balanceOf(manager.address);
-      await gameContract.connect(player2).addCoins(player1.address, usdtAmount);
-      const managerBalanceAfter = await usdt.balanceOf(manager.address);
+      const ethAmount = ethers.utils.parseEther("1");
+      const predictedCoinsAmount = convertETHtoCoin(ethAmount);
+      const predictedFee = calcManagerFee(ethAmount);
+      const managerBalanceBefore = await ethers.provider.getBalance(
+        manager.address
+      );
+      await gameContract
+        .connect(player2)
+        .addCoins(player1.address, { value: ethAmount });
+      const managerBalanceAfter = await ethers.provider.getBalance(
+        manager.address
+      );
       expect(managerBalanceAfter).to.equal(
         managerBalanceBefore.add(predictedFee)
       );
@@ -153,19 +151,10 @@ describe("CryptoPlatform tests", function () {
       expect(coders[0]).to.equal(BigNumber.from(1));
     });
     it("should by all floors and coders for player2", async () => {
-      await usdt["mintTo(address,uint256)"](
-        player2.address,
-        ethers.utils.parseUnits("1000000000000", 6)
-      );
-      await usdt
-        .connect(player2)
-        .approve(
-          gameContract.address,
-          ethers.utils.parseUnits("1000000000000", 6)
-        );
+      const ethAmount = ethers.utils.parseEther("100");
       await gameContract
         .connect(player2)
-        .addCoins(player1.address, ethers.utils.parseUnits("1000000000000", 6));
+        .addCoins(player1.address, { value: ethAmount });
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await gameContract.connect(player2).upgradeTower(i);
@@ -192,19 +181,9 @@ describe("CryptoPlatform tests", function () {
       expect(refEarning._refEarning[0]).to.be.gt(BigNumber.from(0));
     });
     it("should inrease time for 12 hours and buy all floors for player3", async () => {
-      await usdt["mintTo(address,uint256)"](
-        player3.address,
-        ethers.utils.parseUnits("1000000000000", 6)
-      );
-      await usdt
-        .connect(player3)
-        .approve(
-          gameContract.address,
-          ethers.utils.parseUnits("1000000000000", 6)
-        );
       await gameContract
         .connect(player3)
-        .addCoins(player1.address, ethers.utils.parseUnits("1000000000000", 6));
+        .addCoins(player1.address, { value: ethers.utils.parseEther("100") });
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await gameContract.connect(player3).upgradeTower(i);
@@ -221,31 +200,18 @@ describe("CryptoPlatform tests", function () {
     });
     it("should increase time for 12 hours and withdraw money for player2", async () => {
       await ethers.provider.send("evm_increaseTime", [48 * 60 * 60]);
-      const balanceBefore = await usdt.balanceOf(player2.address);
+      const balanceBefore = await ethers.provider.getBalance(player2.address);
       await gameContract.connect(player2).withdrawMoney();
-      const balanceAfter = await usdt.balanceOf(player2.address);
+      const balanceAfter = await ethers.provider.getBalance(player2.address);
       const towerInfoAfter = await gameContract.towers(player2.address);
       expect(towerInfoAfter.money).to.be.equal(BigNumber.from(0));
       expect(balanceAfter).to.be.gt(balanceBefore);
     });
     it("simulate game flow for 10 users", async () => {
       for (let k = 0; k < 10; k++) {
-        await usdt["mintTo(address,uint256)"](
-          accounts[k].address,
-          ethers.utils.parseUnits("1000000000000", 6)
-        );
-        await usdt
-          .connect(accounts[k])
-          .approve(
-            gameContract.address,
-            ethers.utils.parseUnits("1000000000000", 6)
-          );
-        await gameContract
-          .connect(accounts[k])
-          .addCoins(
-            accounts[k].address,
-            ethers.utils.parseUnits("1000000000000", 6)
-          );
+        await gameContract.connect(accounts[k]).addCoins(accounts[k].address, {
+          value: ethers.utils.parseEther("100"),
+        });
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
             await gameContract.connect(accounts[k]).upgradeTower(i);
@@ -266,22 +232,9 @@ describe("CryptoPlatform tests", function () {
     });
     it("simulate game flow for 5 users", async () => {
       for (let k = 10; k < 16; k++) {
-        await usdt["mintTo(address,uint256)"](
-          accounts[k].address,
-          ethers.utils.parseUnits("1000000000000", 6)
-        );
-        await usdt
-          .connect(accounts[k])
-          .approve(
-            gameContract.address,
-            ethers.utils.parseUnits("1000000000000", 6)
-          );
-        await gameContract
-          .connect(accounts[k])
-          .addCoins(
-            accounts[k].address,
-            ethers.utils.parseUnits("1000000000000", 6)
-          );
+        await gameContract.connect(accounts[k]).addCoins(accounts[k].address, {
+          value: ethers.utils.parseEther("100"),
+        });
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
             await gameContract.connect(accounts[k]).upgradeTower(i);
@@ -303,10 +256,10 @@ describe("CryptoPlatform tests", function () {
     it("should withdraw money for player2", async () => {
       await ethers.provider.send("evm_increaseTime", [60 * 60 * 24 * 30]);
       await ethers.provider.send("evm_mine", []);
-      const balanceBefore = await usdt.balanceOf(player2.address);
+      const balanceBefore = await ethers.provider.getBalance(player2.address);
       await gameContract.connect(player2).collectMoney();
       await gameContract.connect(player2).withdrawMoney();
-      const balanceAfter = await usdt.balanceOf(player2.address);
+      const balanceAfter = await ethers.provider.getBalance(player2.address);
       expect(balanceAfter).to.be.gte(balanceBefore);
     });
   });
@@ -322,15 +275,18 @@ describe("CryptoPlatform tests", function () {
       expect(towerInfoAfter.money).to.be.gt(towerInfoBefore.money);
     });
     it("buy coins again for player2", async () => {
-      const usdtAmount = ethers.utils.parseUnits("1000", 6);
-      await usdt.transfer(player2.address, usdtAmount);
-      await usdt.connect(player2).approve(gameContract.address, usdtAmount);
-      const predictedFee = calcManagerFee(usdtAmount);
-      const managerBalanceBefore = await usdt.balanceOf(manager.address);
+      const ethAmount = ethers.utils.parseEther("10");
+
+      const predictedFee = calcManagerFee(ethAmount);
+      const managerBalanceBefore = await ethers.provider.getBalance(
+        manager.address
+      );
       await gameContract
         .connect(player2)
-        .addCoins(ethers.constants.AddressZero, usdtAmount);
-      const managerBalanceAfter = await usdt.balanceOf(manager.address);
+        .addCoins(ethers.constants.AddressZero, { value: ethAmount });
+      const managerBalanceAfter = await ethers.provider.getBalance(
+        manager.address
+      );
       expect(managerBalanceAfter).to.equal(
         managerBalanceBefore.add(predictedFee)
       );
