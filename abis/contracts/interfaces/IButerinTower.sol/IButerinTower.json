@@ -1,0 +1,3 @@
+[
+  "function getCoders(address) view returns (uint8[8])"
+]

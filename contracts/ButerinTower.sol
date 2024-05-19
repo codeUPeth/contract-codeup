@@ -19,7 +19,7 @@ contract ButerinTower {
         address ref; /// @notice User's referrer
         uint256[3] refs; /// @notice User's refs count
         uint256[3] refDeps; /// @notice User's refs earnings
-        uint16[8] coders; /// @notice User's coders count on each floor
+        uint8[8] coders; /// @notice User's coders count on each floor
         uint256 totalCoinsSpend; /// @notice User's total coins spend
         uint256 totalMoneyReceived; /// @notice User's total money received
     }
@@ -31,7 +31,9 @@ contract ButerinTower {
     uint256 public totalTowers;
     /// @notice Total invested amount
     uint256 public totalInvested;
+    /// @notice Coins price
     uint256 public coinsPrice;
+    /// @notice Money rate
     uint256 public moneyRate;
     /// @notice Manager address
     address public immutable manager;
@@ -205,7 +207,7 @@ contract ButerinTower {
 
     /// @notice Get user tower coders info
     /// @param addr User's address
-    function getCoders(address addr) public view returns (uint16[8] memory) {
+    function getCoders(address addr) public view returns (uint8[8] memory) {
         return towers[addr].coders;
     }
 

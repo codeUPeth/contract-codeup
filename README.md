@@ -11,6 +11,8 @@ Welcome to **💎 ButerinTower 💎**, your portal to Ethereum's rich history an
 
 3. **🧑‍🤝‍🧑 Referral Bonuses 🧑‍🤝‍🧑**: Expand your network and earn extra rewards 🤑💰! Invite friends to join and receive bonuses$ whenever they make a purchase of game coins. Together, unlock Ethereum's secrets and bask in its riches! 🎉👫
 
+4. **🚀 Receive NFT 🚀**: Mint a free NFT (ERC1155) after completing the game. 🌟🚀
+
 ### 🌟 Smart Contract Features 🌟
 
 - **👨‍💼 Tower Management 👨‍💼**: Monitor your tower's progress, including Gas Coin balance, earned rewards, coder's count, and more. Dive deep into Ethereum's past, present, and future with each floor you unlock! 📊🏰
@@ -66,6 +68,7 @@ You can see an example of the `.env` file in the `.env.example` file.
 Project smart contracts:
 
 - **ButerinTower.sol** - Main contract of the game.
+- **ButerinTowerErc1155.sol** - Allows to mint ERC1155 for free to all users who have reached the final result, opened all floors, and populated them with coders.
 
 ### ✔️ Testing ✔️
 

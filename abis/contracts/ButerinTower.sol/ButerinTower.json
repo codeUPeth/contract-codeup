@@ -11,7 +11,7 @@
   "function addCoins(address) payable",
   "function coinsPrice() view returns (uint256)",
   "function collectMoney()",
-  "function getCoders(address) view returns (uint16[8])",
+  "function getCoders(address) view returns (uint8[8])",
   "function getRefEarning(address) view returns (uint256[3], uint256[3])",
   "function manager() view returns (address)",
   "function moneyRate() view returns (uint256)",
