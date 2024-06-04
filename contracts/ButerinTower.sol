@@ -149,7 +149,7 @@ contract ButerinTower {
             }
             uint256 refTemp = (coins * refPercent[i]) / 100;
             uint256 coinsAmount = (refTemp * 70) / 100;
-            uint256 money = (refTemp * 100 * 30) / 100;
+            uint256 money = (refTemp * 1000 * 30) / 100;
             towers[ref].coins += coinsAmount;
             towers[ref].money += money;
             towers[ref].refDeps[i] += refTemp;
