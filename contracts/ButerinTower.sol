@@ -103,7 +103,7 @@ contract ButerinTower {
         startUNIX = _startDate;
         manager = _manager;
         coinsPrice = _coinsPrice;
-        moneyRate = _coinsPrice / 100;
+        moneyRate = _coinsPrice / 1000;
     }
 
     /// @notice Add coins to the tower
@@ -257,7 +257,7 @@ contract ButerinTower {
     /// @notice Helper function for getting upgrade price for the floor and chef
     /// @param floorId Floor id
     /// @param chefId Chef id
-    function getUpgradePrice(
+    function getUpgradePriceV2(
         uint256 floorId,
         uint256 chefId
     ) internal pure returns (uint256) {
@@ -289,10 +289,22 @@ contract ButerinTower {
         revert("Incorrect chefId");
     }
 
+    function getUpgradePrice(
+        uint256 floorId,
+        uint256 chefId
+    ) internal pure returns (uint256) {
+        if (chefId == 1) return [14, 21, 42, 77, 168, 280, 504, 630][floorId];
+        if (chefId == 2) return [7, 10, 21, 35, 63, 112, 280, 350][floorId];
+        if (chefId == 3) return [9, 14, 28, 49, 84, 168, 336, 560][floorId];
+        if (chefId == 4) return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
+        if (chefId == 5) return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
+        revert("Incorrect chefId");
+    }
+
     /// @notice Helper function for getting yield for the floor and chef
     /// @param floorId Floor id
     /// @param chefId Chef id
-    function getYield(
+    function getYieldV2(
         uint256 floorId,
         uint256 chefId
     ) internal pure returns (uint256) {
@@ -306,6 +318,22 @@ contract ButerinTower {
             return [82, 264, 780, 2380, 7400, 22700, 72500, 216500][floorId];
         if (chefId == 5)
             return [103, 318, 995, 3050, 9300, 28700, 91500, 275000][floorId];
+        revert("Incorrect chefId");
+    }
+
+    function getYield(
+        uint256 floorId,
+        uint256 chefId
+    ) internal pure returns (uint256) {
+        if (chefId == 1)
+            return [466, 225, 294, 605, 1163, 1616, 2267, 1759][floorId];
+        if (chefId == 2) return [40, 36, 120, 215, 305, 414, 890, 388][floorId];
+        if (chefId == 3)
+            return [169, 51, 217, 317, 432, 351, 357, 1030][floorId];
+        if (chefId == 4)
+            return [217, 92, 270, 410, 595, 858, 972, 1044][floorId];
+        if (chefId == 5)
+            return [239, 98, 381, 550, 741, 1007, 1187, 2416][floorId];
         revert("Incorrect chefId");
     }
 }

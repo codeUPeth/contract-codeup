@@ -6,7 +6,7 @@ import { BigNumber } from "ethers";
 import { ButerinTower } from "../typechain-types";
 import { WithdrawEvent } from "../typechain-types/contracts/ButerinTower";
 
-const COINS_PRICE = ethers.utils.parseEther("0.000002");
+const COINS_PRICE = ethers.utils.parseEther("0.000001");
 
 describe("CryptoPlatform tests", function () {
   let gameContract: ButerinTower;

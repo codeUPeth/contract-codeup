@@ -145,8 +145,8 @@ describe("CryptoPlatform tests", function () {
       const tower = await gameContract.towers(player1.address);
       await gameContract.connect(player1).upgradeTower(0);
       const newTower = await gameContract.towers(player1.address);
-      expect(tower.coins.sub(newTower.coins)).to.equal(BigNumber.from(500));
-      expect(newTower.yield.sub(tower.yield)).to.equal(BigNumber.from(41));
+      expect(tower.coins.sub(newTower.coins)).to.equal(BigNumber.from(14));
+      expect(newTower.yield.sub(tower.yield)).to.equal(BigNumber.from(466));
       const coders = await gameContract.getCoders(player1.address);
       expect(coders[0]).to.equal(BigNumber.from(1));
     });
