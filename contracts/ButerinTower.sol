@@ -13,7 +13,7 @@ contract ButerinTower {
         uint256 coins; /// @notice User's coins balance
         uint256 money; /// @notice User's money balance
         uint256 money2; /// @notice User's earned money balance
-        uint256 yield; /// @notice User's yield
+        uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
         uint256 hrs; /// @notice User's hours in the tower
         address ref; /// @notice User's referrer
@@ -65,7 +65,8 @@ contract ButerinTower {
     event RefEarning(
         address indexed user,
         uint256 coinsAmount,
-        uint256 moneyAmount
+        uint256 moneyAmount,
+        uint256 iteration
     );
     /// @notice Emmited when user withdraw money
     /// @param user User's address
@@ -79,19 +80,19 @@ contract ButerinTower {
     /// @param user User's address
     /// @param floorId Floor id
     /// @param coins Coins amount
-    /// @param yield Yield amount
+    /// @param yields Yield amount
     event UpgradeTower(
         address user,
         uint256 floorId,
         uint256 coins,
-        uint256 yield
+        uint256 yields
     );
     /// @notice Emmited when user sync tower
     /// @param user User's address
-    /// @param yield Yield amount
+    /// @param yields Yield amount
     /// @param hrs Hours amount
     /// @param date Date
-    event SyncTower(address user, uint256 yield, uint256 hrs, uint256 date);
+    event SyncTower(address user, uint256 yields, uint256 hrs, uint256 date);
 
     /// @notice Contract constructor
     /// @param _startDate Start date
@@ -155,7 +156,7 @@ contract ButerinTower {
             towers[ref].refDeps[i] += refTemp;
             i++;
             ref = towers[ref].ref;
-            emit RefEarning(ref, coinsAmount, money);
+            emit RefEarning(ref, coinsAmount, money, i);
         }
     }
 
@@ -201,7 +202,7 @@ contract ButerinTower {
         towers[user].coins -= coinsSpend;
         towers[user].totalCoinsSpend += coinsSpend;
         uint256 yield = getYield(floorId, chefs);
-        towers[user].yield += yield;
+        towers[user].yields += yield;
         emit UpgradeTower(msg.sender, floorId, coinsSpend, yield);
     }
 
@@ -227,7 +228,7 @@ contract ButerinTower {
     /// @param user User's address
     function syncTower(address user) internal {
         require(towers[user].timestamp > 0, "User is not registered");
-        if (towers[user].yield > 0) {
+        if (towers[user].yields > 0) {
             uint256 hrs = block.timestamp /
                 3600 -
                 towers[user].timestamp /
@@ -235,7 +236,7 @@ contract ButerinTower {
             if (hrs + towers[user].hrs > 24) {
                 hrs = 24 - towers[user].hrs;
             }
-            uint256 yield = hrs * towers[user].yield;
+            uint256 yield = hrs * towers[user].yields;
 
             towers[user].money2 += yield;
             towers[user].totalMoneyReceived += yield;
@@ -257,38 +258,6 @@ contract ButerinTower {
     /// @notice Helper function for getting upgrade price for the floor and chef
     /// @param floorId Floor id
     /// @param chefId Chef id
-    function getUpgradePriceV2(
-        uint256 floorId,
-        uint256 chefId
-    ) internal pure returns (uint256) {
-        if (chefId == 1)
-            return
-                [500, 1500, 4500, 13500, 40500, 120000, 365000, 1000000][
-                    floorId
-                ];
-        if (chefId == 2)
-            return
-                [625, 1800, 5600, 16800, 50600, 150000, 456000, 1200000][
-                    floorId
-                ];
-        if (chefId == 3)
-            return
-                [780, 2300, 7000, 21000, 63000, 187000, 570000, 1560000][
-                    floorId
-                ];
-        if (chefId == 4)
-            return
-                [970, 3000, 8700, 26000, 79000, 235000, 713000, 2000000][
-                    floorId
-                ];
-        if (chefId == 5)
-            return
-                [1200, 3600, 11000, 33000, 98000, 293000, 890000, 2500000][
-                    floorId
-                ];
-        revert("Incorrect chefId");
-    }
-
     function getUpgradePrice(
         uint256 floorId,
         uint256 chefId
@@ -304,23 +273,6 @@ contract ButerinTower {
     /// @notice Helper function for getting yield for the floor and chef
     /// @param floorId Floor id
     /// @param chefId Chef id
-    function getYieldV2(
-        uint256 floorId,
-        uint256 chefId
-    ) internal pure returns (uint256) {
-        if (chefId == 1)
-            return [41, 130, 399, 1220, 3750, 11400, 36200, 104000][floorId];
-        if (chefId == 2)
-            return [52, 157, 498, 1530, 4700, 14300, 45500, 126500][floorId];
-        if (chefId == 3)
-            return [65, 201, 625, 1920, 5900, 17900, 57200, 167000][floorId];
-        if (chefId == 4)
-            return [82, 264, 780, 2380, 7400, 22700, 72500, 216500][floorId];
-        if (chefId == 5)
-            return [103, 318, 995, 3050, 9300, 28700, 91500, 275000][floorId];
-        revert("Incorrect chefId");
-    }
-
     function getYield(
         uint256 floorId,
         uint256 chefId
