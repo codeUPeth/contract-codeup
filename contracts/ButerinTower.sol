@@ -68,6 +68,8 @@ contract ButerinTower {
         uint256 moneyAmount,
         uint256 iteration
     );
+    /// @notice Emmited when user has new refferal
+    event NewRefferal(address indexed user);
     /// @notice Emmited when user withdraw money
     /// @param user User's address
     /// @param amount Money amount
@@ -147,6 +149,7 @@ contract ButerinTower {
             }
             if (isNew) {
                 towers[ref].refs[i]++;
+                emit NewRefferal(ref);
             }
             uint256 refTemp = (coins * refPercent[i]) / 100;
             uint256 coinsAmount = (refTemp * 70) / 100;
@@ -155,8 +158,8 @@ contract ButerinTower {
             towers[ref].money += money;
             towers[ref].refDeps[i] += refTemp;
             i++;
-            ref = towers[ref].ref;
             emit RefEarning(ref, coinsAmount, money, i);
+            ref = towers[ref].ref;
         }
     }
 
