@@ -1,5 +1,0 @@
-[
-  "error AddressEmptyCode(address)",
-  "error AddressInsufficientBalance(address)",
-  "error FailedInnerCall()"
-]
