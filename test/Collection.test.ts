@@ -100,4 +100,81 @@ describe("CryptoPlatform tests", function () {
       expect(uri).to.be.eq(newURI);
     });
   });
+  describe("Update ButterinTower", async function () {
+    it("should revert update if not manager", async function () {
+      await expect(
+        collection.connect(player2).updateButerinTower(player2.address)
+      ).to.be.reverted;
+    });
+    it("should update tower", async function () {
+      await collection.connect(manager).updateButerinTower(player2.address);
+      const newTower = await collection.buterinTower();
+      expect(newTower).to.be.eq(player2.address);
+    });
+    it("should revert update if passed address is zero", async function () {
+      await expect(
+        collection
+          .connect(manager)
+          .updateButerinTower(ethers.constants.AddressZero)
+      ).to.be.reverted;
+    });
+    it("should revert update uri if passed empty string", async function () {
+      await expect(collection.connect(manager).updateUri("")).to.be.reverted;
+    });
+    it("should revert update uri if not manager", async function () {
+      await expect(
+        collection.connect(player2).updateUri("https://ipfs.io/ipfs/game")
+      ).to.be.reverted;
+    });
+  });
+  describe("Deployment tests", async function () {
+    it("should revert deploy collection if owner = zero address", async function () {
+      const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
+        "ButerinTowerErc1155"
+      );
+      await expect(
+        GAME_COLLECTION_FACTORY.deploy(
+          "https://ipfs.io/ipfs/Qm",
+          ethers.constants.AddressZero,
+          gameContract.address
+        )
+      ).to.be.reverted;
+    });
+    it("should revert deploy collection if tower = zero address", async function () {
+      const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
+        "ButerinTowerErc1155"
+      );
+      await expect(
+        GAME_COLLECTION_FACTORY.deploy(
+          "https://ipfs.io/ipfs/Qm",
+          manager.address,
+          ethers.constants.AddressZero
+        )
+      ).to.be.reverted;
+    });
+    it("should revert deploy collection if uri = empty string", async function () {
+      const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
+        "ButerinTowerErc1155"
+      );
+      await expect(
+        GAME_COLLECTION_FACTORY.deploy(
+          "",
+          manager.address,
+          gameContract.address
+        )
+      ).to.be.reverted;
+    });
+    it("should deploy collection", async function () {
+      const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
+        "ButerinTowerErc1155"
+      );
+      const collection = await GAME_COLLECTION_FACTORY.deploy(
+        "https://ipfs.io/ipfs/Qm",
+        manager.address,
+        gameContract.address
+      );
+      await collection.deployed();
+      expect(collection.address).to.not.be.undefined;
+    });
+  });
 });

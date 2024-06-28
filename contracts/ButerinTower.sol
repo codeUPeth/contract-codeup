@@ -61,8 +61,10 @@ contract ButerinTower {
     );
     /// @notice Emmited when user earned referral
     /// @param user User's address
+    /// @param coinsAmount Coins amount
     event RefEarning(
         address indexed user,
+        uint256 coinsAmount,
         uint256 moneyAmount,
         uint256 iteration
     );
@@ -120,7 +122,6 @@ contract ButerinTower {
         bool isNew;
         if (towers[user].timestamp == 0) {
             totalTowers++;
-            ref = towers[ref].timestamp == 0 ? managerCache : ref;
             isNew = true;
             towers[user].ref = ref;
             towers[user].timestamp = block.timestamp;
@@ -150,11 +151,13 @@ contract ButerinTower {
                 emit NewRefferal(ref);
             }
             uint256 refTemp = (coins * refPercent[i]) / 100;
-            uint256 money = refTemp * 1000;
+            uint256 coinsAmount = (refTemp * 70) / 100;
+            uint256 money = (refTemp * 1000 * 30) / 100;
+            towers[ref].coins += coinsAmount;
             towers[ref].money += money;
-            towers[ref].refDeps[i] += money;
+            towers[ref].refDeps[i] += refTemp;
             i++;
-            emit RefEarning(ref, money, i);
+            emit RefEarning(ref, coinsAmount, money, i);
             ref = towers[ref].ref;
         }
     }
@@ -262,7 +265,7 @@ contract ButerinTower {
         uint256 chefId
     ) internal pure returns (uint256) {
         if (chefId == 1) return [14, 21, 42, 77, 168, 280, 504, 630][floorId];
-        if (chefId == 2) return [7, 10, 21, 35, 63, 112, 280, 350][floorId];
+        if (chefId == 2) return [7, 11, 21, 35, 63, 112, 280, 350][floorId];
         if (chefId == 3) return [9, 14, 28, 49, 84, 168, 336, 560][floorId];
         if (chefId == 4) return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
         if (chefId == 5) return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
@@ -277,14 +280,14 @@ contract ButerinTower {
         uint256 chefId
     ) internal pure returns (uint256) {
         if (chefId == 1)
-            return [466, 225, 294, 605, 1163, 1616, 2267, 1759][floorId];
-        if (chefId == 2) return [40, 36, 120, 215, 305, 414, 890, 388][floorId];
+            return [467, 226, 294, 606, 1163, 1617, 2267, 1760][floorId];
+        if (chefId == 2) return [41, 37, 121, 215, 305, 415, 890, 389][floorId];
         if (chefId == 3)
-            return [169, 51, 217, 317, 432, 351, 357, 1030][floorId];
+            return [170, 51, 218, 317, 432, 351, 357, 1030][floorId];
         if (chefId == 4)
-            return [217, 92, 270, 410, 595, 858, 972, 1044][floorId];
+            return [218, 92, 270, 410, 596, 858, 972, 1045][floorId];
         if (chefId == 5)
-            return [239, 98, 381, 550, 741, 1007, 1187, 2416][floorId];
+            return [239, 98, 381, 551, 742, 1007, 1188, 2416][floorId];
         revert("Incorrect chefId");
     }
 }

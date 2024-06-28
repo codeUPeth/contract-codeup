@@ -57,7 +57,7 @@ describe("CryptoPlatform tests", function () {
     });
   });
   describe("Game flow", async () => {
-    it("should build a tower and pay fee for manager", async () => {
+    it("should build a tower and pay referal fees", async () => {
       const ethAmount = ethers.utils.parseEther("1");
       const predictedCoinsAmount = convertETHtoCoin(ethAmount);
       const predictedFee = calcManagerFee(ethAmount);
@@ -66,7 +66,7 @@ describe("CryptoPlatform tests", function () {
       );
       await gameContract
         .connect(player1)
-        .addCoins(ethers.constants.AddressZero, { value: ethAmount });
+        .addCoins(manager.address, { value: ethAmount });
       const managerBalanceAfter = await ethers.provider.getBalance(
         manager.address
       );
@@ -146,7 +146,7 @@ describe("CryptoPlatform tests", function () {
       await gameContract.connect(player1).upgradeTower(0);
       const newTower = await gameContract.towers(player1.address);
       expect(tower.coins.sub(newTower.coins)).to.equal(BigNumber.from(14));
-      expect(newTower.yields.sub(tower.yields)).to.equal(BigNumber.from(466));
+      expect(newTower.yields.sub(tower.yields)).to.equal(BigNumber.from(467));
       const coders = await gameContract.getCoders(player1.address);
       expect(coders[0]).to.equal(BigNumber.from(1));
     });
