@@ -121,6 +121,7 @@ contract ButerinTower {
         totalInvested += tokenAmount;
         bool isNew;
         if (towers[user].timestamp == 0) {
+            require(ref != user, "Self ref");
             totalTowers++;
             isNew = true;
             towers[user].ref = ref;

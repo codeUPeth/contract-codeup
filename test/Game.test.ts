@@ -19,7 +19,7 @@ const convertETHtoCoin = (ethAmount: BigNumber) => {
 const calcManagerFee = (ethAmount: BigNumber) => {
   return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
 };
-describe("CryptoPlatform tests", function () {
+describe("ButerinTowers tests", function () {
   let gameContract: ButerinTower;
   let manager: SignerWithAddress;
   let player1: SignerWithAddress;
@@ -49,6 +49,10 @@ describe("CryptoPlatform tests", function () {
       await expect(GAME_FACTORY.deploy(0, manager.address, COINS_PRICE)).to.be
         .reverted;
     });
+    it("should revert deploy if coins price is 0", async () => {
+      const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+      await expect(GAME_FACTORY.deploy(1, manager.address, 0)).to.be.reverted;
+    });
     it("should revert deploy if manager is zero address", async () => {
       const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
       await expect(
@@ -57,6 +61,14 @@ describe("CryptoPlatform tests", function () {
     });
   });
   describe("Game flow", async () => {
+    it("should revert if ref equals to player", async () => {
+      const ethAmount = ethers.utils.parseEther("1");
+      await expect(
+        gameContract
+          .connect(player1)
+          .addCoins(player1.address, { value: ethAmount })
+      ).to.be.revertedWith("Self ref");
+    });
     it("should build a tower and pay referal fees", async () => {
       const ethAmount = ethers.utils.parseEther("1");
       const predictedCoinsAmount = convertETHtoCoin(ethAmount);
@@ -209,7 +221,7 @@ describe("CryptoPlatform tests", function () {
     });
     it("simulate game flow for 10 users", async () => {
       for (let k = 0; k < 10; k++) {
-        await gameContract.connect(accounts[k]).addCoins(accounts[k].address, {
+        await gameContract.connect(accounts[k]).addCoins(manager.address, {
           value: ethers.utils.parseEther("100"),
         });
         for (let i = 0; i < 8; i++) {
@@ -232,7 +244,7 @@ describe("CryptoPlatform tests", function () {
     });
     it("simulate game flow for 5 users", async () => {
       for (let k = 10; k < 16; k++) {
-        await gameContract.connect(accounts[k]).addCoins(accounts[k].address, {
+        await gameContract.connect(accounts[k]).addCoins(manager.address, {
           value: ethers.utils.parseEther("100"),
         });
         for (let i = 0; i < 8; i++) {

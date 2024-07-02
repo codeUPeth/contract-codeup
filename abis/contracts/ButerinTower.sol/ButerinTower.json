@@ -4,7 +4,7 @@
   "event CollectMoney(address,uint256)",
   "event NewRefferal(address indexed)",
   "event ProjectFeePaid(address indexed,uint256)",
-  "event RefEarning(address indexed,uint256,uint256)",
+  "event RefEarning(address indexed,uint256,uint256,uint256)",
   "event SyncTower(address,uint256,uint256,uint256)",
   "event TowerCreated(address indexed,address indexed)",
   "event UpgradeTower(address,uint256,uint256,uint256)",
