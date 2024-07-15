@@ -21,14 +21,14 @@ contract ButerinTower {
         address ref; /// @notice User's referrer
         uint256[3] refs; /// @notice User's refs count
         uint256[3] refDeps; /// @notice User's refs earnings
-        uint8[8] coders; /// @notice User's coders count on each floor
+        uint8[8] builders; /// @notice User's builders count on each floor
         uint256 totalCoinsSpend; /// @notice User's total coins spend
         uint256 totalMoneyReceived; /// @notice User's total money received
     }
     /// @notice User's tower info
     mapping(address => Tower) public towers;
-    /// @notice Total coders count
-    uint256 public totalCoders;
+    /// @notice Total builders count
+    uint256 public totalBuilders;
     /// @notice Total towers count
     uint256 public totalTowers;
     /// @notice Total invested amount
@@ -195,26 +195,26 @@ contract ButerinTower {
         address user = msg.sender;
         if (floorId > 0) {
             require(
-                towers[user].coders[floorId - 1] >= 5,
+                towers[user].builders[floorId - 1] >= 5,
                 "Need to buy previous tower"
             );
         }
         syncTower(user);
-        towers[user].coders[floorId]++;
-        totalCoders++;
-        uint256 chefs = towers[user].coders[floorId];
-        uint256 coinsSpend = getUpgradePrice(floorId, chefs);
+        towers[user].builders[floorId]++;
+        totalBuilders++;
+        uint256 builders = towers[user].builders[floorId];
+        uint256 coinsSpend = getUpgradePrice(floorId, builders);
         towers[user].coins -= coinsSpend;
         towers[user].totalCoinsSpend += coinsSpend;
-        uint256 yield = getYield(floorId, chefs);
+        uint256 yield = getYield(floorId, builders);
         towers[user].yields += yield;
         emit UpgradeTower(msg.sender, floorId, coinsSpend, yield);
     }
 
-    /// @notice Get user tower coders info
+    /// @notice Get user tower builders info
     /// @param addr User's address
-    function getCoders(address addr) public view returns (uint8[8] memory) {
-        return towers[addr].coders;
+    function getBuilders(address addr) public view returns (uint8[8] memory) {
+        return towers[addr].builders;
     }
 
     /// @notice Get user ref earning info
@@ -260,9 +260,9 @@ contract ButerinTower {
         require(success, "Transfer failed.");
     }
 
-    /// @notice Helper function for getting upgrade price for the floor and chef
+    /// @notice Helper function for getting upgrade price for the floor and builder
     /// @param floorId Floor id
-    /// @param builderId Chef id
+    /// @param builderId Builder id
     function getUpgradePrice(
         uint256 floorId,
         uint256 builderId
@@ -278,9 +278,9 @@ contract ButerinTower {
         revert("Incorrect builderId");
     }
 
-    /// @notice Helper function for getting yield for the floor and chef
+    /// @notice Helper function for getting yield for the floor and builder
     /// @param floorId Floor id
-    /// @param builderId Chef id
+    /// @param builderId Builder id
     function getYield(
         uint256 floorId,
         uint256 builderId

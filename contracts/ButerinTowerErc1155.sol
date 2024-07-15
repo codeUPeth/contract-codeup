@@ -59,7 +59,7 @@ contract ButerinTowerErc1155 is ERC1155, Ownable {
     /// @param _account Account to check
     /// @return bool True if mint is allowed, false otherwise
     function isMintAllowed(address _account) public view returns (bool) {
-        uint8[8] memory coders = buterinTower.getCoders(_account);
+        uint8[8] memory coders = buterinTower.getBuilders(_account);
         uint8 count;
         for (uint8 i = 0; i < 8; i++) {
             count += coders[i];

@@ -19,7 +19,7 @@ const convertETHtoCoin = (ethAmount: BigNumber) => {
 const calcManagerFee = (ethAmount: BigNumber) => {
   return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
 };
-describe("CryptoPlatform tests", function () {
+describe("Collection tests", function () {
   let gameContract: ButerinTower;
   let collection: ButerinTowerErc1155;
   let manager: SignerWithAddress;
