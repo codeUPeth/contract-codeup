@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-//███████████████████████████████████████████████████████████████████████████████
-//█▄─▄─▀█▄─██─▄█─▄─▄─█▄─▄▄─█▄─▄▄▀█▄─▄█▄─▀█▄─▄███─▄─▄─█─▄▄─█▄─█▀▀▀█─▄█▄─▄▄─█▄─▄▄▀█
-//██─▄─▀██─██─████─████─▄█▀██─▄─▄██─███─█▄▀─██████─███─██─██─█─█─█─███─▄█▀██─▄─▄█
-//▀▄▄▄▄▀▀▀▄▄▄▄▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▀▄▄▄▀▀▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀
+///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
+///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
+///██║░░╚═╝██║░░██║██║░░██║█████╗░░██║░░░██║██████╔╝░░░█████╗░░░░░██║░░░███████║
+///██║░░██╗██║░░██║██║░░██║██╔══╝░░██║░░░██║██╔═══╝░░░░██╔══╝░░░░░██║░░░██╔══██║
+///╚█████╔╝╚█████╔╝██████╔╝███████╗╚██████╔╝██║░░░░░██╗███████╗░░░██║░░░██║░░██║
+///░╚════╝░░╚════╝░╚═════╝░╚══════╝░╚═════╝░╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝
 
 /// @title ButerinTower contract
 /// @notice This contract is used for the ButerinTower game
@@ -260,35 +262,39 @@ contract ButerinTower {
 
     /// @notice Helper function for getting upgrade price for the floor and chef
     /// @param floorId Floor id
-    /// @param chefId Chef id
+    /// @param builderId Chef id
     function getUpgradePrice(
         uint256 floorId,
-        uint256 chefId
+        uint256 builderId
     ) internal pure returns (uint256) {
-        if (chefId == 1) return [14, 21, 42, 77, 168, 280, 504, 630][floorId];
-        if (chefId == 2) return [7, 11, 21, 35, 63, 112, 280, 350][floorId];
-        if (chefId == 3) return [9, 14, 28, 49, 84, 168, 336, 560][floorId];
-        if (chefId == 4) return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
-        if (chefId == 5) return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
-        revert("Incorrect chefId");
+        if (builderId == 1)
+            return [14, 21, 42, 77, 168, 280, 504, 630][floorId];
+        if (builderId == 2) return [7, 11, 21, 35, 63, 112, 280, 350][floorId];
+        if (builderId == 3) return [9, 14, 28, 49, 84, 168, 336, 560][floorId];
+        if (builderId == 4)
+            return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
+        if (builderId == 5)
+            return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
+        revert("Incorrect builderId");
     }
 
     /// @notice Helper function for getting yield for the floor and chef
     /// @param floorId Floor id
-    /// @param chefId Chef id
+    /// @param builderId Chef id
     function getYield(
         uint256 floorId,
-        uint256 chefId
+        uint256 builderId
     ) internal pure returns (uint256) {
-        if (chefId == 1)
+        if (builderId == 1)
             return [467, 226, 294, 606, 1163, 1617, 2267, 1760][floorId];
-        if (chefId == 2) return [41, 37, 121, 215, 305, 415, 890, 389][floorId];
-        if (chefId == 3)
+        if (builderId == 2)
+            return [41, 37, 121, 215, 305, 415, 890, 389][floorId];
+        if (builderId == 3)
             return [170, 51, 218, 317, 432, 351, 357, 1030][floorId];
-        if (chefId == 4)
+        if (builderId == 4)
             return [218, 92, 270, 410, 596, 858, 972, 1045][floorId];
-        if (chefId == 5)
+        if (builderId == 5)
             return [239, 98, 381, 551, 742, 1007, 1188, 2416][floorId];
-        revert("Incorrect chefId");
+        revert("Incorrect builderId");
     }
 }

@@ -240,7 +240,7 @@ describe("ButerinTowers tests", function () {
     it("should revert by floor for player2 if already bought", async () => {
       await expect(
         gameContract.connect(player2).upgradeTower(0)
-      ).to.be.revertedWith("Incorrect chefId");
+      ).to.be.revertedWith("Incorrect builderId");
     });
     it("simulate game flow for 5 users", async () => {
       for (let k = 10; k < 16; k++) {
