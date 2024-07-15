@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
-import { ButerinTower, ButerinTowerErc1155 } from "../typechain-types";
+import { Codeup, CodeupErc1155 } from "../typechain-types";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 
@@ -20,8 +20,8 @@ const calcManagerFee = (ethAmount: BigNumber) => {
   return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
 };
 describe("Collection tests", function () {
-  let gameContract: ButerinTower;
-  let collection: ButerinTowerErc1155;
+  let gameContract: Codeup;
+  let collection: CodeupErc1155;
   let manager: SignerWithAddress;
   let player1: SignerWithAddress;
   let player2: SignerWithAddress;
@@ -35,23 +35,23 @@ describe("Collection tests", function () {
     player3 = acc4;
     accounts = others;
 
-    const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+    const GAME_FACTORY = await ethers.getContractFactory("Codeup");
     const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
-      "ButerinTowerErc1155"
+      "CodeupErc1155"
     );
 
     gameContract = (await GAME_FACTORY.deploy(
       1,
       manager.address,
       COINS_PRICE
-    )) as ButerinTower;
+    )) as Codeup;
     await gameContract.deployed();
 
     collection = (await GAME_COLLECTION_FACTORY.deploy(
       "hattps://ipfs.io/ipfs/Qm",
       manager.address,
       gameContract.address
-    )) as ButerinTowerErc1155;
+    )) as CodeupErc1155;
   });
 
   describe("Testing collection mint", async function () {
@@ -102,20 +102,17 @@ describe("Collection tests", function () {
   });
   describe("Update ButterinTower", async function () {
     it("should revert update if not manager", async function () {
-      await expect(
-        collection.connect(player2).updateButerinTower(player2.address)
-      ).to.be.reverted;
+      await expect(collection.connect(player2).updateCodeup(player2.address)).to
+        .be.reverted;
     });
     it("should update tower", async function () {
-      await collection.connect(manager).updateButerinTower(player2.address);
-      const newTower = await collection.buterinTower();
+      await collection.connect(manager).updateCodeup(player2.address);
+      const newTower = await collection.codeup();
       expect(newTower).to.be.eq(player2.address);
     });
     it("should revert update if passed address is zero", async function () {
       await expect(
-        collection
-          .connect(manager)
-          .updateButerinTower(ethers.constants.AddressZero)
+        collection.connect(manager).updateCodeup(ethers.constants.AddressZero)
       ).to.be.reverted;
     });
     it("should revert update uri if passed empty string", async function () {
@@ -130,7 +127,7 @@ describe("Collection tests", function () {
   describe("Deployment tests", async function () {
     it("should revert deploy collection if owner = zero address", async function () {
       const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
-        "ButerinTowerErc1155"
+        "CodeupErc1155"
       );
       await expect(
         GAME_COLLECTION_FACTORY.deploy(
@@ -142,7 +139,7 @@ describe("Collection tests", function () {
     });
     it("should revert deploy collection if tower = zero address", async function () {
       const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
-        "ButerinTowerErc1155"
+        "CodeupErc1155"
       );
       await expect(
         GAME_COLLECTION_FACTORY.deploy(
@@ -154,7 +151,7 @@ describe("Collection tests", function () {
     });
     it("should revert deploy collection if uri = empty string", async function () {
       const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
-        "ButerinTowerErc1155"
+        "CodeupErc1155"
       );
       await expect(
         GAME_COLLECTION_FACTORY.deploy(
@@ -166,7 +163,7 @@ describe("Collection tests", function () {
     });
     it("should deploy collection", async function () {
       const GAME_COLLECTION_FACTORY = await ethers.getContractFactory(
-        "ButerinTowerErc1155"
+        "CodeupErc1155"
       );
       const collection = await GAME_COLLECTION_FACTORY.deploy(
         "https://ipfs.io/ipfs/Qm",

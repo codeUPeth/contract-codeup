@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
-import { ButerinTower } from "../typechain-types";
+import { Codeup } from "../typechain-types";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 
@@ -20,7 +20,7 @@ const calcManagerFee = (ethAmount: BigNumber) => {
   return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
 };
 describe("ButerinTowers tests", function () {
-  let gameContract: ButerinTower;
+  let gameContract: Codeup;
   let manager: SignerWithAddress;
   let player1: SignerWithAddress;
   let player2: SignerWithAddress;
@@ -34,27 +34,27 @@ describe("ButerinTowers tests", function () {
     player3 = acc4;
     accounts = others;
 
-    const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+    const GAME_FACTORY = await ethers.getContractFactory("Codeup");
 
     gameContract = (await GAME_FACTORY.deploy(
       1,
       manager.address,
       COINS_PRICE
-    )) as ButerinTower;
+    )) as Codeup;
     await gameContract.deployed();
   });
   describe("Deployment", async () => {
     it("should revert deploy if start time is 0", async () => {
-      const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+      const GAME_FACTORY = await ethers.getContractFactory("Codeup");
       await expect(GAME_FACTORY.deploy(0, manager.address, COINS_PRICE)).to.be
         .reverted;
     });
     it("should revert deploy if coins price is 0", async () => {
-      const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+      const GAME_FACTORY = await ethers.getContractFactory("Codeup");
       await expect(GAME_FACTORY.deploy(1, manager.address, 0)).to.be.reverted;
     });
     it("should revert deploy if manager is zero address", async () => {
-      const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+      const GAME_FACTORY = await ethers.getContractFactory("Codeup");
       await expect(
         GAME_FACTORY.deploy(1, ethers.constants.AddressZero, COINS_PRICE)
       ).to.be.reverted;
@@ -100,7 +100,7 @@ describe("ButerinTowers tests", function () {
       ).to.be.revertedWith("Zero coins");
     });
     it("should revert buy coins if game not started", async () => {
-      const gameFactorty = await ethers.getContractFactory("ButerinTower");
+      const gameFactorty = await ethers.getContractFactory("Codeup");
       const currentTime = await getCurrentTimeStamp();
       const game = await gameFactorty.deploy(
         currentTime + 60 * 60 * 24 * 30,

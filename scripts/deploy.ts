@@ -7,9 +7,9 @@ const COINS_PRICE = ethers.utils.parseEther("0.000001");
 const startTimeUnix = "1";
 
 async function main() {
-  const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+  const GAME_FACTORY = await ethers.getContractFactory("Codeup");
   const NFT_COLLECTION_FACTORY = await ethers.getContractFactory(
-    "ButerinTowerErc1155"
+    "CodeupErc1155"
   );
   const game: ButerinTower = await GAME_FACTORY.deploy(
     startTimeUnix,

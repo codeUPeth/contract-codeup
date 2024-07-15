@@ -3,13 +3,13 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
-import { ButerinTower } from "../typechain-types";
+import { Codeup } from "../typechain-types";
 import { WithdrawEvent } from "../typechain-types/contracts/ButerinTower";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 
 describe("CryptoPlatform tests", function () {
-  let gameContract: ButerinTower;
+  let gameContract: Codeup;
   let manager: SignerWithAddress;
   let player1: SignerWithAddress;
   before(async () => {
@@ -17,13 +17,13 @@ describe("CryptoPlatform tests", function () {
     manager = acc1;
     player1 = acc2;
 
-    const GAME_FACTORY = await ethers.getContractFactory("ButerinTower");
+    const GAME_FACTORY = await ethers.getContractFactory("Codeup");
 
     gameContract = (await GAME_FACTORY.deploy(
       1,
       manager.address,
       COINS_PRICE
-    )) as ButerinTower;
+    )) as Codeup;
     await gameContract.deployed();
     await gameContract.connect(player1).addCoins(ethers.constants.AddressZero, {
       value: ethers.utils.parseEther("1000"),

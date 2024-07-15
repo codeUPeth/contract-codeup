@@ -8,9 +8,9 @@ pragma solidity 0.8.23;
 ///╚█████╔╝╚█████╔╝██████╔╝███████╗╚██████╔╝██║░░░░░██╗███████╗░░░██║░░░██║░░██║
 ///░╚════╝░░╚════╝░╚═════╝░╚══════╝░╚═════╝░╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝
 
-/// @title ButerinTower contract
-/// @notice This contract is used for the ButerinTower game
-contract ButerinTower {
+/// @title Codeup contract
+/// @notice This contract is used for the Codeup game
+contract Codeup {
     struct Tower {
         uint256 coins; /// @notice User's coins balance
         uint256 money; /// @notice User's money balance
