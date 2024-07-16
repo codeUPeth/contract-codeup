@@ -1,10 +1,10 @@
-## 💎 ButerinTower Smart Contract 💎
+## 💎 CodeUp Smart Contract 💎
 
-Welcome to **💎 ButerinTower 💎**, your portal to Ethereum's rich history and promising future! 🏰🚀
+Welcome to **💎 CodeUp 💎**, your portal to Ethereum's rich history and promising future! 🏰🚀
 
 ### 🎮 Game Mechanics 🎮
 
-1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey✈️💵 by purchasing tower floors using **ETH💎**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆 The Buterin Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled coders 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five coders 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
+1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey✈️💵 by purchasing tower floors using **ETH💎**. Each floor represents a milestone on Ethereum's roadmap. Explore Ethereum's past, present, and future as you ascend your tower! 🌆 The CodeUp Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled coders 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five coders 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
 
 2. **💰 Earning Rewards 💰**: Your tower generates rewards in **Gas Coin 💵** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨
    ⚠️ Users must collect their earned rewards at least once every 24 hours to avoid missing out on potential rewards.⚠️
@@ -21,7 +21,7 @@ Welcome to **💎 ButerinTower 💎**, your portal to Ethereum's rich history an
 
 - **🔝 Upgrade System 🔝**: Enhance your tower's capabilities by upgrading floors and adding more coders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
 
-Embark on an unforgettable journey through Ethereum's past, present, and future with ButerinTower! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
+Embark on an unforgettable journey through Ethereum's past, present, and future with CodeUp! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
 
 ## 📚 Technical Stack 📚
 
@@ -67,8 +67,8 @@ You can see an example of the `.env` file in the `.env.example` file.
 
 Project smart contracts:
 
-- **ButerinTower.sol** - Main contract of the game.
-- **ButerinTowerErc1155.sol** - Allows to mint ERC1155 for free to all users who have reached the final result, opened all floors, and populated them with coders.
+- **Codeup.sol** - Main contract of the game.
+- **CodeupErc1155.sol** - Allows to mint ERC1155 for free to all users who have reached the final result, opened all floors, and populated them with coders.
 
 ### ✔️ Testing ✔️
 
@@ -90,7 +90,7 @@ yarn coverage
 yarn compile
 ```
 
-### 🚀 Deployment Buterin Tower 🚀
+### 🚀 Deployment CodeUp 🚀
 
 To deploy contracts you need set up `.env`
 

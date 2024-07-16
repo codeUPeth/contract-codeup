@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { verifyContract } from "./verify";
-import { ButerinTower } from "../typechain-types";
+import { Codeup } from "../typechain-types";
 
 const MANAGER_ADDRESS = "0xF94AeE7BD5bdfc249746edF0C6Fc0F5E3c1DA226";
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
@@ -11,7 +11,7 @@ async function main() {
   const NFT_COLLECTION_FACTORY = await ethers.getContractFactory(
     "CodeupErc1155"
   );
-  const game: ButerinTower = await GAME_FACTORY.deploy(
+  const game: Codeup = await GAME_FACTORY.deploy(
     startTimeUnix,
     MANAGER_ADDRESS,
     COINS_PRICE
