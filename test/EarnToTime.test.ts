@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { Codeup } from "../typechain-types";
-import { WithdrawEvent } from "../typechain-types/contracts/ButerinTower";
+import { WithdrawEvent } from "../typechain-types/contracts/Codeup";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 

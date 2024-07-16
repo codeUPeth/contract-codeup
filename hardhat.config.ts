@@ -39,9 +39,10 @@ task(
 const config: any = {
   solidity: {
     version: "0.8.23",
+    evmVersion: "default",
     settings: {
       optimizer: {
-        enabled: true,
+        enabled: false,
         runs: 200,
       },
     },
@@ -246,6 +247,11 @@ const config: any = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    baseMain: {
+      url: process.env.BASE_MAINNET_URL || "",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -302,6 +308,7 @@ const config: any = {
       moonbeam: process.env.MOONBEAM_API_KEY,
       moonriver: process.env.MOONBEAM_API_KEY,
       moonbaseAlpha: process.env.MOONBEAM_API_KEY,
+      base: process.env.BASE_API_KEY,
       // For Harmony testnet & mainnet
       harmony: process.env.HARMONY_API_KEY,
       harmonyTest: process.env.HARMONY_API_KEY,

@@ -3,7 +3,10 @@ pragma solidity 0.8.23;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ICodeup} from "./interfaces/ICodeup.sol";
+
+interface ICodeup {
+    function getBuilders(address addr) external view returns (uint8[8] memory);
+}
 
 contract CodeupErc1155 is ERC1155, Ownable {
     ICodeup public codeup; /// @notice Codeup contract address
