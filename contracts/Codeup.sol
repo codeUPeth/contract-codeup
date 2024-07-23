@@ -17,7 +17,7 @@ contract Codeup {
         uint256 money2; /// @notice User's earned money balance
         uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
-        uint256 hrs; /// @notice User's hours in the tower
+        uint256 min; /// @notice User's time in the tower
         address ref; /// @notice User's referrer
         uint256[3] refs; /// @notice User's refs count
         uint256[3] refDeps; /// @notice User's refs earnings
@@ -181,7 +181,7 @@ contract Codeup {
     function collectMoney() external {
         address user = msg.sender;
         syncTower(user);
-        towers[user].hrs = 0;
+        towers[user].min = 0;
         uint256 collect = towers[user].money2;
         towers[user].money += collect;
         towers[user].money2 = 0;
@@ -234,19 +234,17 @@ contract Codeup {
     function syncTower(address user) internal {
         require(towers[user].timestamp > 0, "User is not registered");
         if (towers[user].yields > 0) {
-            uint256 hrs = block.timestamp /
-                3600 -
-                towers[user].timestamp /
-                3600;
-            if (hrs + towers[user].hrs > 24) {
-                hrs = 24 - towers[user].hrs;
+            uint256 min = (block.timestamp / 60) -
+                (towers[user].timestamp / 60);
+            if (min + towers[user].min > 24) {
+                min = 24 - towers[user].min;
             }
-            uint256 yield = hrs * towers[user].yields;
+            uint256 yield = min * towers[user].yields;
 
             towers[user].money2 += yield;
             towers[user].totalMoneyReceived += yield;
-            towers[user].hrs += hrs;
-            emit SyncTower(user, yield, hrs, block.timestamp);
+            towers[user].min += min;
+            emit SyncTower(user, yield, min, block.timestamp);
         }
         towers[user].timestamp = block.timestamp;
     }

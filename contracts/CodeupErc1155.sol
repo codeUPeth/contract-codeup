@@ -10,7 +10,7 @@ interface ICodeup {
 
 contract CodeupErc1155 is ERC1155, Ownable {
     ICodeup public codeup; /// @notice Codeup contract address
-    uint8 public constant TOTAL_CODERS = 40; /// @notice Total number of coders
+    uint8 public constant TOTAL_BUILDERS = 40; /// @notice Total number of coders
 
     mapping(address => bool) public isMinted; /// @notice Mapping to check if an account has minted
 
@@ -59,13 +59,13 @@ contract CodeupErc1155 is ERC1155, Ownable {
     /// @param _account Account to check
     /// @return bool True if mint is allowed, false otherwise
     function isMintAllowed(address _account) public view returns (bool) {
-        uint8[8] memory coders = codeup.getBuilders(_account);
+        uint8[8] memory builders = codeup.getBuilders(_account);
         uint8 count;
         for (uint8 i = 0; i < 8; i++) {
-            count += coders[i];
+            count += builders[i];
         }
 
-        if (count == TOTAL_CODERS) {
+        if (count == TOTAL_BUILDERS) {
             return true;
         } else {
             return false;

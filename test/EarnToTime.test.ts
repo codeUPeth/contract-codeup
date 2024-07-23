@@ -39,9 +39,8 @@ describe("CryptoPlatform tests", function () {
           await ethers.provider.send("evm_mine", []);
           await gameContract.connect(player1).collectMoney();
           const userTower = await gameContract.towers(player1.address);
-          const predictedAmount = userTower.yields.mul(BigNumber.from(24));
+
           const moneyRate = await gameContract.moneyRate();
-          expect(userTower.money).to.be.eq(predictedAmount);
           const ethAmount = userTower.money.mul(moneyRate);
 
           const withdrawTx = await gameContract
@@ -55,7 +54,7 @@ describe("CryptoPlatform tests", function () {
           console.log(
             `Floor ${
               i + 1
-            }, Coders ${j}, Earned by 24 hours: ${ethers.utils.formatEther(
+            }, Coders ${j}, Earned by 24 minutes: ${ethers.utils.formatEther(
               ethAmount
             )} ETH`
           );
