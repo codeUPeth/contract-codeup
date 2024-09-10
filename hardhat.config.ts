@@ -52,13 +52,18 @@ const config: any = {
       initialBaseFeePerGas: 0,
       chainId: 31337,
       forking: {
-        url: process.env.ETH_MAINNET_URL || "",
+        // forking: {
+        //   url: "https://arbitrum-one.g.allthatnode.com/full/evm/c3aa51ee3624443e9b4ca727f5dddbf8",
+        //   blockNumber: 209739710,
+        //   enabled: true,
+        // },
+        url: "https://arbitrum-one.g.allthatnode.com/full/evm/c3aa51ee3624443e9b4ca727f5dddbf8",
         // The Hardhat network will by default fork from the latest mainnet block
         // To pin the block number, specify it below
         // You will need access to a node with archival data for this to work!
         // blockNumber: 14743877,
         // If you want to do some forking, set `enabled` to true
-        enabled: false,
+        enabled: true,
       },
     },
     localhost: {
@@ -67,6 +72,7 @@ const config: any = {
     "truffle-dashboard": {
       url: "http://localhost:24012/rpc",
     },
+
     rinkeby: {
       url: process.env.ETH_RINKEBY_TESTNET_URL || "",
       accounts:
