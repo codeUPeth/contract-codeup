@@ -483,9 +483,15 @@ describe("Codeup tests", function () {
       const towerStatsBefore = await gameContract.towers(user.address);
       await ethers.provider.send("evm_increaseTime", [16 * 60 * 60]);
       await ethers.provider.send("evm_mine", []);
+      await gameContract.connect(user).collect();
       await gameContract.connect(user).reinvest();
       const towerStatsAfter = await gameContract.towers(user.address);
       expect(towerStatsAfter.microETH).to.be.gt(towerStatsBefore.microETH);
+    });
+    it("should revert reinvest if user has no money", async () => {
+      await expect(
+        gameContract.connect(accounts[15]).reinvest()
+      ).to.be.revertedWith("No microETH to reinvest");
     });
   });
 });

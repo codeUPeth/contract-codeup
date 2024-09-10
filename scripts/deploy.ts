@@ -1,47 +1,62 @@
 import { ethers } from "hardhat";
-import { verifyContract } from "./verify";
 import { Codeup } from "../typechain-types";
+import { verifyContract } from "./verify";
 
-const MANAGER_ADDRESS = "0xF94AeE7BD5bdfc249746edF0C6Fc0F5E3c1DA226";
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 const startTimeUnix = "1";
+const deployer = "0x450A9E4745c27773698D28cCbE4F9fE388a931F3";
+
+const VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8";
+const WEIGHTED_POOL_FACTORY = "0xc7E5ED1054A24Ef31D827E6F86caA58B3Bc168d7";
+const WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
 
 async function main() {
   const GAME_FACTORY = await ethers.getContractFactory("Codeup");
-  const NFT_COLLECTION_FACTORY = await ethers.getContractFactory(
-    "CodeupErc1155"
+  const GAME_TOKEN_FACTORY = await ethers.getContractFactory("CodeupERC20");
+  console.log("Deploying contracts with the account:", deployer);
+  const gameToken = await GAME_TOKEN_FACTORY.deploy(
+    deployer,
+    "GameToken",
+    "GT"
   );
+  await gameToken.deployTransaction.wait(5);
+  console.log("GameToken deployed to:", gameToken.address);
+
+  const tokens = [WETH, gameToken.address].sort(function (a, b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
   const game: Codeup = await GAME_FACTORY.deploy(
     startTimeUnix,
-    MANAGER_ADDRESS,
-    COINS_PRICE
+    COINS_PRICE,
+    WEIGHTED_POOL_FACTORY,
+    gameToken.address,
+    VAULT,
+    tokens,
+    [ethers.utils.parseUnits("0.5", "18"), ethers.utils.parseUnits("0.5", "18")]
   );
   await game.deployTransaction.wait(5);
   console.log("Game deployed to:", game.address);
 
-  const collection = await NFT_COLLECTION_FACTORY.deploy(
-    "https://ipfs.io/ipfs/Qm",
-    MANAGER_ADDRESS,
-    game.address
-  );
-  await collection.deployTransaction.wait(5);
-  console.log("Collection deployed to:", collection.address);
+  await gameToken.transfer(game.address, await gameToken.balanceOf(deployer));
 
   try {
-    await verifyContract(game.address, [
-      startTimeUnix,
-      MANAGER_ADDRESS,
-      COINS_PRICE,
-    ]);
+    await verifyContract(gameToken.address, [deployer, "GameToken", "GT"]);
   } catch (error) {
     console.error("Error verifying contract:", error);
   }
 
   try {
-    await verifyContract(collection.address, [
-      "https://ipfs.io/ipfs/Qm",
-      MANAGER_ADDRESS,
-      game.address,
+    await verifyContract(game.address, [
+      startTimeUnix,
+      COINS_PRICE,
+      WEIGHTED_POOL_FACTORY,
+      gameToken.address,
+      VAULT,
+      tokens,
+      [
+        ethers.utils.parseUnits("0.5", "18"),
+        ethers.utils.parseUnits("0.5", "18"),
+      ],
     ]);
   } catch (error) {
     console.error("Error verifying contract:", error);

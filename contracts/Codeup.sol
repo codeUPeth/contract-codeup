@@ -182,7 +182,7 @@ contract Codeup {
     }
 
     /// @notice Collect earned MicroETH from the tower to game balance
-    function collect() public {
+    function collect() external {
         address user = msg.sender;
         syncTower(user);
         towers[user].min = 0;
@@ -195,7 +195,10 @@ contract Codeup {
     /// @notice Reinvest earned microETH to the tower
     function reinvest() external {
         address user = msg.sender;
-        collect();
+        require(
+            towers[user].microETHForWithdraw > 0,
+            "No microETH to reinvest"
+        );
         uint256 microETHForWithdraw = towers[user].microETHForWithdraw *
             microETHForWithdrawRate;
         uint256 amount = address(this).balance < microETHForWithdraw
