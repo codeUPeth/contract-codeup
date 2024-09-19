@@ -242,13 +242,11 @@ contract Codeup is ReentrancyGuard {
         require(isClaimAllowed(_account), "Claim Forbidden");
         require(!isClaimed[_account], "Already Claimed");
         uint256 wethBalance = IERC20(weth).balanceOf(address(this));
-        address wethCached = weth;
-        address codeupERC20Cached = codeupERC20;
         /// if pool not created, create pool
         if (uniswapV2Pool == address(0)) {
             /// Create uniswap pool
             uniswapV2Pool = IUniswapV2Factory(uniswapV2Factory).createPair(
-                wethCached,
+                weth,
                 codeupERC20
             );
 
@@ -257,8 +255,8 @@ contract Codeup is ReentrancyGuard {
                 : wethBalance;
 
             _addLiquidity(
-                wethCached,
-                codeupERC20Cached,
+                weth,
+                codeupERC20,
                 firstLiquidity,
                 FIRST_LIQUIDITY_GAME_TOKEN
             );
@@ -266,17 +264,12 @@ contract Codeup is ReentrancyGuard {
             // buy codeupERC20 for WETH
             if (wethBalance > 0) {
                 uint256[] memory swapResult = _buyCodeupERC20(
-                    wethCached,
-                    codeupERC20Cached,
+                    weth,
+                    codeupERC20,
                     wethBalance / 2
                 );
 
-                _addLiquidity(
-                    wethCached,
-                    codeupERC20Cached,
-                    swapResult[0],
-                    swapResult[1]
-                );
+                _addLiquidity(weth, codeupERC20, swapResult[0], swapResult[1]);
             }
         }
         /// Set claim status to true, user can't claim token again.
@@ -285,10 +278,7 @@ contract Codeup is ReentrancyGuard {
         /// Lock LP tokens
         _lockLP();
         /// Transfer CodeupERC20 amount to the user
-        IERC20(codeupERC20Cached).safeTransfer(
-            _account,
-            TOKEN_AMOUNT_FOR_WINNER
-        );
+        IERC20(codeupERC20).safeTransfer(_account, TOKEN_AMOUNT_FOR_WINNER);
         emit TokenClaimed(_account, TOKEN_AMOUNT_FOR_WINNER);
     }
 
@@ -390,12 +380,10 @@ contract Codeup is ReentrancyGuard {
         address[] memory path = new address[](2);
         path[0] = _weth;
         path[1] = _codeupERC20;
-        address uniswapRouterCached = uniswapV2Router;
-        uint256[] memory amounts = IUniswapV2Router(uniswapRouterCached)
+        uint256[] memory amounts = IUniswapV2Router(uniswapV2Router)
             .getAmountsOut(_wethAmount, path);
         IERC20(_weth).safeIncreaseAllowance(uniswapV2Router, _wethAmount);
-        swapResult = IUniswapV2Router(uniswapRouterCached)
-            .swapExactTokensForTokens(
+        swapResult = IUniswapV2Router(uniswapV2Router).swapExactTokensForTokens(
                 amounts[0],
                 0,
                 path,
@@ -411,15 +399,8 @@ contract Codeup is ReentrancyGuard {
         uint amountADesired,
         uint amountBDesired
     ) internal {
-        address uniswapRouterCached = uniswapV2Router;
-        IERC20(tokenA).safeIncreaseAllowance(
-            uniswapRouterCached,
-            amountADesired
-        );
-        IERC20(tokenB).safeIncreaseAllowance(
-            uniswapRouterCached,
-            amountBDesired
-        );
+        IERC20(tokenA).safeIncreaseAllowance(uniswapV2Router, amountADesired);
+        IERC20(tokenB).safeIncreaseAllowance(uniswapV2Router, amountBDesired);
         IUniswapV2Router(uniswapV2Router).addLiquidity(
             tokenA,
             tokenB,

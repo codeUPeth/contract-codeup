@@ -4,8 +4,8 @@ import { verifyContract } from "./verify";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 const startTimeUnix = "1";
-const deployer = process.env.DEPLOYER
-  ? process.env.DEPLOYER
+const deployer = process.env.DEPLOYER_ADDRESS
+  ? process.env.DEPLOYER_ADDRESS
   : ethers.constants.AddressZero;
 const ROUTER = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 const name = "codeUP.app (CUP)";
