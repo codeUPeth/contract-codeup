@@ -4,19 +4,21 @@ import { verifyContract } from "./verify";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
 const startTimeUnix = "1";
-const deployer = "0x450A9E4745c27773698D28cCbE4F9fE388a931F3";
-
+const deployer = process.env.DEPLOYER
+  ? process.env.DEPLOYER
+  : ethers.constants.AddressZero;
 const ROUTER = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
+const name = "codeUP.app (CUP)";
+const symbol = "CUP";
 
 async function main() {
+  if (deployer === ethers.constants.AddressZero) {
+    throw new Error("DEPLOYER env variable is required");
+  }
   const GAME_FACTORY = await ethers.getContractFactory("Codeup");
   const GAME_TOKEN_FACTORY = await ethers.getContractFactory("CodeupERC20");
   console.log("Deploying contracts with the account:", deployer);
-  const gameToken = await GAME_TOKEN_FACTORY.deploy(
-    deployer,
-    "GameToken",
-    "GT"
-  );
+  const gameToken = await GAME_TOKEN_FACTORY.deploy(deployer, name, symbol);
   await gameToken.deployTransaction.wait(5);
   console.log("GameToken deployed to:", gameToken.address);
 
@@ -32,7 +34,7 @@ async function main() {
   await gameToken.transfer(game.address, await gameToken.balanceOf(deployer));
 
   try {
-    await verifyContract(gameToken.address, [deployer, "GameToken", "GT"]);
+    await verifyContract(gameToken.address, [deployer, name, symbol]);
   } catch (error) {
     console.error("Error verifying contract:", error);
   }
