@@ -38,7 +38,7 @@ contract Codeup is ReentrancyGuard {
     /// @notice Amount of game token for first liquidity
     uint256 public constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
     /// @notice Withdraw commission 25% for rewards pool, 25% for liquidity pool
-    uint256 public WITHDRAW_COMMISSION = 50;
+    uint256 public constant WITHDRAW_COMMISSION = 50;
 
     /// @notice UniswapV2Router address
     address immutable uniswapV2Router;
