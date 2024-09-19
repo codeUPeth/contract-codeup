@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CodeupERC20 is ERC20, Ownable {
-    uint256 public constant MAX_SUPPLY = 1 ether;
+    uint256 public constant MAX_SUPPLY = 1000000 ether;
 
     constructor(
         address initialOwner,

@@ -11,7 +11,7 @@ Welcome to **💎 CodeUp 💎**, your portal to Ethereum's rich history and prom
 
 3. **🚀 Receive CodeupERC20 🚀**: Upon successfully completing the game with 40 builders, you can **claim 0.000001 CodeupERC20** tokens! 🌟🚀
 
-4. **📈 Sell or Hold CodeupERC20**: After claiming, you can either **sell your CodeupERC20** on the **Balancer pool** for ETH, or **hold onto it** for potential future gains. The value of CodeupERC20 **increases** as more players join the game and invest in their towers. 💎🚀
+4. **📈 Sell or Hold CodeupERC20**: After claiming, you can either **sell your CodeupERC20** on the **UniswapV2 pool** for ETH, or **hold onto it** for potential future gains. The value of CodeupERC20 **increases** as more players join the game and invest in their towers. 💎🚀
 
 ### 🌟 Smart Contract Features 🌟
 
@@ -19,7 +19,7 @@ Welcome to **💎 CodeUp 💎**, your portal to Ethereum's rich history and prom
 
 - **🔝 Upgrade System 🔝**: Enhance your tower's capabilities by upgrading floors and adding more builders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
 
-- **📊 Dynamic Pricing**: The **CodeupERC20 token** follows a **dynamic pricing model**. As more players add microETH to their towers, the **token price increases**, providing greater rewards to early participants and enhancing liquidity through the Balancer pool. 🌐
+- **📊 Dynamic Pricing**: The **CodeupERC20 token** follows a **dynamic pricing model**. As more players add microETH to their towers, the **token price increases**, providing greater rewards to early participants and enhancing liquidity through the UniswapV2 pool. 🌐
 
 Embark on an unforgettable journey through Ethereum's past, present, and future with CodeUp! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
 

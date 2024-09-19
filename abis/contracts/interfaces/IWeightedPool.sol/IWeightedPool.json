@@ -1,5 +1,0 @@
-[
-  "function getNormalizedWeights() view returns (uint256[])",
-  "function getPoolId() view returns (bytes32)",
-  "function name() view returns (string)"
-]

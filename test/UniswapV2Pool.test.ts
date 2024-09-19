@@ -1,117 +1,95 @@
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Codeup, ERC20, CodeupERC20 } from "../typechain-types";
-import { VAULT_ABI, WEIGHTED_POOL_ABI } from "./abis";
+import { CodeupERC20, Codeup } from "../typechain-types";
+import { ROUTER, WETH_ABI } from "./abis";
 
 const COINS_PRICE = ethers.utils.parseEther("0.000001");
-const VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8";
-const WEIGHT_POOL_FACTORY = "0xc7E5ED1054A24Ef31D827E6F86caA58B3Bc168d7";
+const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 
-const calcPoolStats = async (game: Codeup, vault: any) => {
-  const pool = await ethers.getContractAt(
-    WEIGHTED_POOL_ABI,
-    await game.balancerPool()
-  );
-  const poolID = await pool.getPoolId();
-  const weights = await pool.getNormalizedWeights();
-  const poolTokens = await vault.getPoolTokens(poolID);
+const calcPoolStats = async (game: Codeup) => {
+  const router = await ethers.getContractAt(ROUTER, UniswapV2Router);
 
-  const wethCalculation = poolTokens.balances[0] * weights[0];
-  const gtCalculation = poolTokens.balances[1] * weights[1];
-  const gtToWETHprice = wethCalculation / gtCalculation;
-  const wethToGTprice = gtCalculation / wethCalculation;
+  const weth = await game.weth();
+  const gameToken = await game.codeupERC20();
 
-  console.log(
-    "Weth Balance in Pool",
-    ethers.utils.formatUnits(poolTokens.balances[0], 18)
-  );
-  console.log("WETH Weight in Pool", weights[0] / 1e16);
+  const swapAmount = ethers.utils.parseEther("1");
+
+  const wethToGT = await router.getAmountsOut(swapAmount, [weth, gameToken]);
+  const wethToGTprice = wethToGT[1];
+
+  const gtToWeth = await router.getAmountsOut(swapAmount, [gameToken, weth]);
+  const gtToWETHprice = gtToWeth[1];
 
   console.log(
-    "GT Balance in Pool",
-    ethers.utils.formatUnits(poolTokens.balances[1], 18)
+    "1 WETH to GT Price ==========>",
+    ethers.utils.formatUnits(wethToGTprice, "18")
   );
-  console.log("GT Weight in Pool", weights[1] / 1e16);
-
-  console.log("1 WETH to GT Price ==========>", wethToGTprice);
-  console.log("1 GT to WETH Price ===========>", gtToWETHprice);
+  console.log(
+    "1 GT to WETH Price ===========>",
+    ethers.utils.formatUnits(gtToWETHprice, "18")
+  );
 };
 
 const sell = async (
-  vault: any,
   player: SignerWithAddress,
   game: Codeup,
   gameToken: CodeupERC20
 ) => {
-  const pool = await ethers.getContractAt(
-    WEIGHTED_POOL_ABI,
-    await game.balancerPool()
-  );
+  const router = await ethers.getContractAt(ROUTER, UniswapV2Router);
   await gameToken
     .connect(player)
-    .approve(vault.address, ethers.constants.MaxUint256);
-  await vault.connect(player).swap(
-    {
-      poolId: await pool.getPoolId(),
-      kind: 0,
-      assetIn: gameToken.address,
-      assetOut: ethers.constants.AddressZero,
-      amount: await gameToken.balanceOf(player.address),
-      userData: "0x",
-    },
-    {
-      sender: player.address,
-      fromInternalBalance: false,
-      recipient: player.address,
-      toInternalBalance: false,
-    },
-    1,
-    ethers.constants.MaxUint256
-  );
-  await calcPoolStats(game, vault);
+    .approve(UniswapV2Router, ethers.constants.MaxUint256);
+
+  await router
+    .connect(player)
+    .swapExactTokensForTokens(
+      await gameToken.balanceOf(player.address),
+      0,
+      [gameToken.address, await game.weth()],
+      player.address,
+      ethers.constants.MaxUint256
+    );
+
+  await calcPoolStats(game);
 };
 
 const buy = async (
-  vault: any,
   player: SignerWithAddress,
   game: Codeup,
   gameToken: CodeupERC20
 ) => {
-  const pool = await ethers.getContractAt(
-    WEIGHTED_POOL_ABI,
-    await game.balancerPool()
-  );
-  await gameToken
+  const router = await ethers.getContractAt(ROUTER, UniswapV2Router);
+  const wethAddress = await game.weth();
+  const wethContract = await ethers.getContractAt(WETH_ABI, wethAddress);
+
+  await wethContract
     .connect(player)
-    .approve(vault.address, ethers.constants.MaxUint256);
-  await vault.connect(player).swap(
-    {
-      poolId: await pool.getPoolId(),
-      kind: 0,
-      assetIn: ethers.constants.AddressZero,
-      assetOut: gameToken.address,
-      amount: ethers.utils.parseEther("0.0001"),
-      userData: "0x",
-    },
-    {
-      sender: player.address,
-      fromInternalBalance: false,
-      recipient: player.address,
-      toInternalBalance: false,
-    },
-    0,
-    ethers.constants.MaxUint256,
-    { value: ethers.utils.parseEther("0.0002") }
-  );
-  await calcPoolStats(game, vault);
+    .deposit({ value: ethers.utils.parseEther("0.0001") });
+
+  await wethContract
+    .connect(player)
+    .approve(router.address, ethers.constants.MaxUint256);
+
+  await router
+    .connect(player)
+    .swapExactTokensForTokens(
+      ethers.utils.parseEther("0.0001"),
+      0,
+      [wethAddress, gameToken.address],
+      player.address,
+      ethers.constants.MaxUint256
+    );
+
+  await calcPoolStats(game);
 };
 
 const buyAllCoders = async (
   gameContract: Codeup,
   player: SignerWithAddress
 ) => {
+  console.log(player.address);
   const neededETH = ethers.utils.parseEther("0.009");
-  await gameContract.connect(player).addMicroETH({
+  await gameContract.connect(player).addCUP({
     value: neededETH,
   });
 
@@ -122,15 +100,12 @@ const buyAllCoders = async (
   }
 };
 
-describe("CryptoPlatform tests", function () {
+describe("UniswapV2Pool tests", function () {
   let gameContract: Codeup;
   let gameToken: CodeupERC20;
-  let vault: any;
   let deployer: SignerWithAddress;
   let player1: SignerWithAddress;
   let accounts: SignerWithAddress[];
-  let tokens: string[];
-  let weth: ERC20;
   before(async () => {
     const [acc1, acc2, ...accs] = await ethers.getSigners();
     deployer = acc1;
@@ -143,25 +118,11 @@ describe("CryptoPlatform tests", function () {
     gameToken = await GAME_TOKEN_FACTORY.deploy(deployer.address, "GT", "GT");
     await gameToken.deployed();
 
-    vault = await ethers.getContractAt(VAULT_ABI, VAULT);
-    console.log(await vault.WETH());
-    weth = await ethers.getContractAt("ERC20", await vault.WETH());
-
-    tokens = [weth.address, gameToken.address].sort(function (a, b) {
-      return a.toLowerCase().localeCompare(b.toLowerCase());
-    });
-
     gameContract = await GAME_FACTORY.deploy(
       1,
       COINS_PRICE,
-      WEIGHT_POOL_FACTORY,
-      gameToken.address,
-      VAULT,
-      tokens,
-      [
-        ethers.utils.parseUnits("0.5", "18"),
-        ethers.utils.parseUnits("0.5", "18"),
-      ]
+      UniswapV2Router,
+      gameToken.address
     );
     await gameContract.deployed();
 
@@ -169,7 +130,7 @@ describe("CryptoPlatform tests", function () {
     await gameToken.transfer(gameContract.address, deployerBalance);
   });
 
-  describe("Testing balancer price", async function () {
+  describe("Testing pool price", async function () {
     it("player 1", async function () {
       console.log(
         "====================================================================="
@@ -182,11 +143,10 @@ describe("CryptoPlatform tests", function () {
         `Player 1 GameToken balance`
       );
 
-      await calcPoolStats(gameContract, vault);
+      await calcPoolStats(gameContract);
       console.log(
         "====================================================================="
       );
-      // await sell(vault, player1, gameContract, gameToken);
     });
     it("player 2", async function () {
       console.log(
@@ -200,8 +160,8 @@ describe("CryptoPlatform tests", function () {
         `Player 2 GameToken balance`
       );
 
-      await calcPoolStats(gameContract, vault);
-      await sell(vault, accounts[0], gameContract, gameToken);
+      await calcPoolStats(gameContract);
+      await sell(accounts[0], gameContract, gameToken);
       console.log(
         "====================================================================="
       );
@@ -210,15 +170,15 @@ describe("CryptoPlatform tests", function () {
       const isHold = [
         true,
         true,
+        true,
+        true,
+        true,
         false,
         false,
         false,
+        true,
         false,
-        false,
-        false,
-        false,
-        false,
-        false,
+        true,
         false,
         false,
         false,
@@ -265,6 +225,7 @@ describe("CryptoPlatform tests", function () {
         console.log(
           "====================================================================="
         );
+
         await buyAllCoders(gameContract, accounts[i]);
         await gameContract.claimCodeupERC20(accounts[i].address);
         const gameTokenBalance = await gameToken.balanceOf(accounts[i].address);
@@ -272,17 +233,17 @@ describe("CryptoPlatform tests", function () {
           ethers.utils.formatUnits(gameTokenBalance, 18),
           `Player ${i} GameToken balance`
         );
-        await calcPoolStats(gameContract, vault);
+        await calcPoolStats(gameContract);
         if (!isHold[i]) {
-          await sell(vault, accounts[i], gameContract, gameToken);
+          await sell(accounts[i], gameContract, gameToken);
         }
         if (isTreaders[i]) {
           console.log("+++++++++++ treader buy +++++++++++");
-          await buy(vault, deployer, gameContract, gameToken);
+          await buy(deployer, gameContract, gameToken);
         }
         if (isTreadersSell[i]) {
           console.log("+++++++++++ treader sell +++++++++++");
-          await sell(vault, deployer, gameContract, gameToken);
+          await sell(deployer, gameContract, gameToken);
         }
         console.log(
           "====================================================================="
