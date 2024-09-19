@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.23;
+pragma solidity 0.8.26;
 
 import {IWETH, IERC20} from "./interfaces/IWETH.sol";
 import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";

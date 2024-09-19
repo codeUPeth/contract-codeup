@@ -38,7 +38,7 @@ task(
 
 const config: any = {
   solidity: {
-    version: "0.8.23",
+    version: "0.8.26",
     evmVersion: "default",
     settings: {
       optimizer: {
