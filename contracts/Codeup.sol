@@ -5,6 +5,7 @@ import {IWETH, IERC20} from "./interfaces/IWETH.sol";
 import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 ///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
 ///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
@@ -15,7 +16,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /// @title Codeup contract
 /// @notice This contract is used for the Codeup game
-contract Codeup {
+contract Codeup is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Tower {
@@ -135,8 +136,10 @@ contract Codeup {
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
     }
 
+    receive() external payable {}
+
     /// @notice Add cup to the tower
-    function addCUP() external payable {
+    function addCUP() external payable nonReentrant {
         uint256 tokenAmount = msg.value;
         require(block.timestamp > startUNIX, "We are not live yet!");
         uint256 cup = tokenAmount / cupPrice;
@@ -156,7 +159,7 @@ contract Codeup {
     }
 
     /// @notice Withdraw earned cup from the tower
-    function withdraw() external {
+    function withdraw() external nonReentrant {
         address user = msg.sender;
         uint256 cup = towers[user].cupForWithdraw * cupForWithdrawRate;
         uint256 amount = address(this).balance < cup

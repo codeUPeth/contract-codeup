@@ -3,6 +3,7 @@
   "error AddressEmptyCode(address)",
   "error AddressInsufficientBalance(address)",
   "error FailedInnerCall()",
+  "error ReentrancyGuardReentrantCall()",
   "error SafeERC20FailedOperation(address)",
   "event AddCup(address indexed,uint256,uint256,uint256)",
   "event Collect(address,uint256)",
