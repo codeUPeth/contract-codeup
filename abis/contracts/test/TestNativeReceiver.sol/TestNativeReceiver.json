@@ -1,3 +1,4 @@
 [
-  "constructor()"
+  "constructor() payable",
+  "error JustAnError()"
 ]

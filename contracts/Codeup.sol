@@ -6,7 +6,6 @@ import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 ///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
 ///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
@@ -17,18 +16,18 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Codeup contract
 /// @notice This contract is used for the Codeup game
-contract Codeup is ReentrancyGuard, Ownable {
+contract Codeup is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Tower {
-        uint256 cup; /// @notice User's cup balance
-        uint256 cupForWithdraw; /// @notice User's availble for withdraw balance
-        uint256 cupCollected; /// @notice User's earned cup balance
+        uint256 gameETH; /// @notice User's gameETH balance
+        uint256 gameETHForWithdraw; /// @notice User's availble for withdraw balance
+        uint256 gameETHCollected; /// @notice User's earned gameETH balance
         uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
         uint256 min; /// @notice User's time in the tower
-        uint256 totalCupSpend; /// @notice User's total cup spend
-        uint256 totalCupReceived; /// @notice User's total cup received
+        uint256 totalGameETHSpend; /// @notice User's total gameETH spend
+        uint256 totalGameETHReceived; /// @notice User's total gameETH received
         uint8[8] builders; /// @notice User's builders count on each floor
     }
 
@@ -38,8 +37,8 @@ contract Codeup is ReentrancyGuard, Ownable {
     uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
-    /// @notice Withdraw commission 25% for rewards pool, 25% for liquidity pool
-    uint256 private constant WITHDRAW_COMMISSION = 50;
+    /// @notice Withdraw commission 33% for rewards pool, 33% for liquidity pool
+    uint256 private constant WITHDRAW_COMMISSION = 66;
 
     /// @notice UniswapV2Router address
     address immutable uniswapV2Router;
@@ -49,18 +48,18 @@ contract Codeup is ReentrancyGuard, Ownable {
     address public immutable codeupERC20;
     /// @notice WETH address
     address public immutable weth;
+    /// @notice gameETH price
+    uint256 public immutable gameETHPrice;
+    /// @notice gameETH for withdraw rate
+    uint256 public immutable gameETHForWithdrawRate;
+    /// @notice Start date
+    uint256 public immutable startUNIX;
     /// @notice Total builders count
     uint256 public totalBuilders;
     /// @notice Total towers count
     uint256 public totalTowers;
     /// @notice Total invested amount
     uint256 public totalInvested;
-    /// @notice cup price
-    uint256 public cupPrice;
-    /// @notice cup for withdraw rate
-    uint256 public cupForWithdrawRate;
-    /// @notice Start date
-    uint256 public startUNIX;
     /// @notice UniswapV2 pool address WETH/CodeupERC20
     address public uniswapV2Pool;
 
@@ -69,6 +68,7 @@ contract Codeup is ReentrancyGuard, Ownable {
     /// @notice User's tower info
     mapping(address => Tower) public towers;
 
+    /// @notice Error messages
     error ZeroValue();
     error IncorrectBuilderId();
     error NotStarted();
@@ -77,231 +77,238 @@ contract Codeup is ReentrancyGuard, Ownable {
     error NeedToBuyPreviousBuilder();
     error ClaimForbidden();
     error AlreadyClaimed();
+    error OwnerIsNotAllowed();
 
     /// @notice Emmited when user created tower
     /// @param user User's address
     event TowerCreated(address indexed user);
-    /// @notice Emmited when user added cup to the tower
+    /// @notice Emmited when user added gameETH to the tower
     /// @param user User's address
-    /// @param cupAmount cup amount
+    /// @param gameETHAmount gameETH amount
     /// @param ethAmount Spended ETH amount
-    event AddCup(
+    event AddGameETH(
         address indexed user,
-        uint256 cupAmount,
+        uint256 gameETHAmount,
         uint256 ethAmount,
         uint256 ethForPool
     );
-    /// @notice Emmited when user withdraw cup
+    /// @notice Emmited when user withdraw gameETH
     /// @param user User's address
-    /// @param amount cup amount
-    event Withdraw(address user, uint256 amount);
-    /// @notice Emmited when user collect earned cup
+    /// @param amount gameETH amount
+    event Withdraw(address indexed user, uint256 amount);
+    /// @notice Emmited when user collect earned gameETH
     /// @param user User's address
-    /// @param amount cup amount
-    event Collect(address user, uint256 amount);
+    /// @param amount gameETH amount
+    event Collect(address indexed user, uint256 amount);
     /// @notice Emmited when user upgrade tower
     /// @param user User's address
     /// @param floorId Floor id
-    /// @param cup cup amount
+    /// @param gameETH gameETH amount
     /// @param yields Yield amount
     event UpgradeTower(
-        address user,
+        address indexed user,
         uint256 floorId,
-        uint256 cup,
+        uint256 gameETH,
         uint256 yields
     );
     /// @notice Emmited when user sync tower
     /// @param user User's address
     /// @param yields Yield amount
     /// @param hrs Hours amount
-    /// @param date Date
-    event SyncTower(address user, uint256 yields, uint256 hrs, uint256 date);
+    event SyncTower(address indexed user, uint256 yields, uint256 hrs);
     /// @notice Emmited when uniswapV2 pool created
     /// @param pool Pool address
-    event PoolCreated(address pool);
+    event PoolCreated(address indexed pool);
     /// @notice Emmited when game token claimed
     /// @param account Account address
     /// @param amount Token amount
-    event TokenClaimed(address account, uint256 amount);
+    event TokenClaimed(address indexed account, uint256 amount);
+    /// @notice Emmited when liquidity locked
+    event LiquidityLocked(uint256 indexed amount);
+    /// @notice Emmited when liquidity added
+    event LiquidityAdded(uint256 indexed amountA, uint256 indexed amountB);
+    /// @notice Emmited when buy CodeupERC20
+    event BuyCodeupERC20(uint256 indexed amount);
 
     /// @notice Contract constructor
     /// @param _startDate Start date
-    /// @param _cupPrice cup price
+    /// @param _gameETHPrice gameETH price
     /// @param _uniswapV2Router Weighted pool factory address
     /// @param _codeupERC20 CodeupERC20 address
     constructor(
         uint256 _startDate,
-        uint256 _cupPrice,
+        uint256 _gameETHPrice,
         address _uniswapV2Router,
         address _codeupERC20
-    ) payable Ownable(msg.sender) {
-        _checkValue(_cupPrice);
+    ) payable {
+        _checkValue(_gameETHPrice);
         _checkValue(_startDate);
         startUNIX = _startDate;
-        cupPrice = _cupPrice;
-        cupForWithdrawRate = _cupPrice / 1000;
+        gameETHPrice = _gameETHPrice;
+        gameETHForWithdrawRate = _gameETHPrice / 1000;
         codeupERC20 = _codeupERC20;
         uniswapV2Router = _uniswapV2Router;
         weth = IUniswapV2Router(_uniswapV2Router).WETH();
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
     }
 
-    receive() external payable {
-        IWETH(weth).deposit{value: msg.value}();
-    }
-
-    /// @notice Add cup to the tower
-    function addCUP() external payable nonReentrant {
+    /// @notice Add gameETH to the tower
+    function addGameETH() external payable {
         uint256 tokenAmount = msg.value;
         require(block.timestamp > startUNIX, NotStarted());
-        uint256 cup = tokenAmount / cupPrice;
-        _checkValue(cup);
+        uint256 gameETH = tokenAmount / gameETHPrice;
+        _checkValue(gameETH);
         address user = msg.sender;
         uint256 totalInvestedBedore = totalInvested;
         totalInvested = totalInvestedBedore + tokenAmount;
 
         Tower storage tower = towers[user];
         if (tower.timestamp == 0) {
-            uint256 totalTowersBefore = totalTowers;
-            totalTowers = totalTowersBefore + 1;
+            totalTowers++;
             tower.timestamp = block.timestamp;
             emit TowerCreated(user);
         }
-        tower.cup += cup;
+        tower.gameETH += gameETH;
 
         uint256 ethAmount = (tokenAmount * 10) / 100;
         IWETH(weth).deposit{value: ethAmount}();
-        emit AddCup(user, cup, tokenAmount, ethAmount);
+        emit AddGameETH(user, gameETH, tokenAmount, ethAmount);
     }
 
-    /// @notice Withdraw earned cup from the tower
-    function withdraw() external nonReentrant {
+    /// @notice Withdraw earned gameETH from the tower
+    function withdraw() external {
         address user = msg.sender;
         Tower storage tower = towers[user];
         uint256 contractBalance = _selfBalance();
-        uint256 cup = tower.cupForWithdraw * cupForWithdrawRate;
-        uint256 amount = contractBalance < cup ? contractBalance : cup;
+        uint256 gameETH = tower.gameETHForWithdraw * gameETHForWithdrawRate;
+        uint256 amount = contractBalance < gameETH ? contractBalance : gameETH;
 
         if (amount >= 1) {
             uint256 commission = (amount * WITHDRAW_COMMISSION) / 100;
             amount -= commission;
-            /// 25% commission to pool
-            /// 25% commission for rewards
             uint256 amountForPool = commission >> 1;
             IWETH(weth).deposit{value: amountForPool}();
         }
-        tower.cupForWithdraw = 0;
+        tower.gameETHForWithdraw = 0;
         (bool success, ) = user.call{value: amount}("");
         require(success, TransferFailed());
         emit Withdraw(user, amount);
     }
 
-    /// @notice Collect earned cup from the tower to game balance
+    /// @notice Collect earned gameETH from the tower to game balance
     function collect() external {
         address user = msg.sender;
         Tower storage tower = towers[user];
         _syncTower(user);
         tower.min = 0;
-        uint256 cupCollected = tower.cupCollected;
-        tower.cupForWithdraw += cupCollected;
-        tower.cupCollected = 0;
-        emit Collect(user, cupCollected);
+        uint256 gameETHCollected = tower.gameETHCollected;
+        tower.gameETHForWithdraw += gameETHCollected;
+        tower.gameETHCollected = 0;
+        emit Collect(user, gameETHCollected);
     }
 
-    /// @notice Reinvest earned cup to the tower
-    function reinvest() external {
+    /// @notice Reinvest earned gameETH to the tower
+    function reinvest() external nonReentrant {
         address user = msg.sender;
         uint256 contractBalance = _selfBalance();
         Tower storage tower = towers[user];
-        _checkValue(tower.cupForWithdraw);
-        uint256 cupForWithdraw = tower.cupForWithdraw * cupForWithdrawRate;
-        uint256 amount = contractBalance < cupForWithdraw
+        _checkValue(tower.gameETHForWithdraw);
+        uint256 gameETHForWithdraw = tower.gameETHForWithdraw *
+            gameETHForWithdrawRate;
+        uint256 amount = contractBalance < gameETHForWithdraw
             ? contractBalance
-            : cupForWithdraw;
-        tower.cupForWithdraw = 0;
+            : gameETHForWithdraw;
+        tower.gameETHForWithdraw = 0;
         emit Withdraw(user, amount);
 
-        uint256 cup = amount / cupPrice;
-        _checkValue(cup);
-        totalInvested += amount;
-        tower.cup += cup;
+        uint256 gameETH = amount / gameETHPrice;
+        _checkValue(gameETH);
+        uint256 totalInvestedBefore = totalInvested;
+        totalInvested = totalInvestedBefore + amount;
+        tower.gameETH += gameETH;
 
         uint256 ethAmount = (amount * 10) / 100;
         IWETH(weth).deposit{value: ethAmount}();
-        emit AddCup(user, cup, amount, ethAmount);
+        emit AddGameETH(user, gameETH, amount, ethAmount);
     }
 
     /// @notice Upgrade tower
-    /// @param floorId Floor id
-    function upgradeTower(uint256 floorId) external {
-        require(floorId < 8, MaxFloorsReached());
+    /// @param _floorId Floor id
+    function upgradeTower(uint256 _floorId) external {
+        require(_floorId < 8, MaxFloorsReached());
         address user = msg.sender;
-        if (floorId > 0) {
+        Tower storage tower = towers[user];
+        if (_floorId != 0) {
             require(
-                towers[user].builders[floorId - 1] >= 5,
+                tower.builders[_floorId - 1] == 5,
                 NeedToBuyPreviousBuilder()
             );
         }
         _syncTower(user);
-        Tower storage tower = towers[user];
-        tower.builders[floorId]++;
+
+        tower.builders[_floorId]++;
         totalBuilders++;
-        uint256 builders = tower.builders[floorId];
-        uint256 cupSpend = _getUpgradePrice(floorId, builders);
-        tower.cup -= cupSpend;
-        tower.totalCupSpend += cupSpend;
-        uint256 yield = _getYield(floorId, builders);
+        uint256 buildersCount = tower.builders[_floorId];
+        uint256 gameETHSpend = _getUpgradePrice(_floorId, buildersCount);
+        tower.gameETH -= gameETHSpend;
+        tower.totalGameETHSpend += gameETHSpend;
+        uint256 yield = _getYield(_floorId, buildersCount);
         tower.yields += yield;
-        emit UpgradeTower(msg.sender, floorId, cupSpend, yield);
+        emit UpgradeTower(msg.sender, _floorId, gameETHSpend, yield);
     }
 
     /// @notice Function perform claiming of game token
     /// Only users with 40 builders can claim game token
     /// Claiming possible only once.
     /// @param _account Account address
-    function claimCodeupERC20(address _account) external {
+    function claimCodeupERC20(address _account) external nonReentrant {
         require(isClaimAllowed(_account), ClaimForbidden());
         require(!isClaimed[_account], AlreadyClaimed());
-        address wethCached = weth;
         address currentContract = address(this);
-        uint256 wethBalance = IERC20(wethCached).balanceOf(currentContract);
-        address codeupERC20Cached = codeupERC20;
+        address wethMemory = weth;
+        address codeupERC20Memory = codeupERC20;
+        address routerMemory = uniswapV2Router;
+        uint256 wethBalance = IERC20(wethMemory).balanceOf(currentContract);
 
         /// if pool not created, create pool
         if (uniswapV2Pool == address(0)) {
             /// Create uniswap pool
             uniswapV2Pool = IUniswapV2Factory(uniswapV2Factory).createPair(
-                wethCached,
-                codeupERC20Cached
+                wethMemory,
+                codeupERC20Memory
             );
-
-            uint256 firstLiquidity = wethBalance > MAX_FIRST_LIQUIDITY_AMOUNT
-                ? MAX_FIRST_LIQUIDITY_AMOUNT
+            uint256 maxFirstLiquidity = MAX_FIRST_LIQUIDITY_AMOUNT;
+            uint256 firstLiquidity = wethBalance > maxFirstLiquidity
+                ? maxFirstLiquidity
                 : wethBalance;
 
             _addLiquidity(
-                wethCached,
-                codeupERC20Cached,
+                routerMemory,
+                wethMemory,
+                codeupERC20Memory,
                 firstLiquidity,
                 FIRST_LIQUIDITY_GAME_TOKEN,
                 0,
                 0,
                 currentContract
             );
+            emit PoolCreated(uniswapV2Pool);
         } else {
             // buy codeupERC20 for WETH
             if (wethBalance >= 1) {
                 uint256[] memory swapResult = _buyCodeupERC20(
-                    wethCached,
-                    codeupERC20Cached,
+                    routerMemory,
+                    wethMemory,
+                    codeupERC20Memory,
                     wethBalance >> 1,
                     0,
                     currentContract
                 );
 
                 _addLiquidity(
-                    wethCached,
-                    codeupERC20Cached,
+                    routerMemory,
+                    wethMemory,
+                    codeupERC20Memory,
                     swapResult[0],
                     swapResult[1],
                     0,
@@ -316,8 +323,9 @@ contract Codeup is ReentrancyGuard, Ownable {
         /// Lock LP tokens
         _lockLP(currentContract);
         /// Transfer CodeupERC20 amount to the user
-        IERC20(codeupERC20).safeTransfer(_account, TOKEN_AMOUNT_FOR_WINNER);
-        emit TokenClaimed(_account, TOKEN_AMOUNT_FOR_WINNER);
+        uint256 tokenAmountForWinner = TOKEN_AMOUNT_FOR_WINNER;
+        IERC20(codeupERC20Memory).safeTransfer(_account, tokenAmountForWinner);
+        emit TokenClaimed(_account, tokenAmountForWinner);
     }
 
     /// @notice View function for checking if user can claim CodeupERC20
@@ -337,146 +345,146 @@ contract Codeup is ReentrancyGuard, Ownable {
     }
 
     /// @notice Get user tower builders info
-    /// @param addr User's address
-    function getBuilders(address addr) public view returns (uint8[8] memory) {
-        return towers[addr].builders;
+    /// @param _user User's address
+    function getBuilders(address _user) public view returns (uint8[8] memory) {
+        return towers[_user].builders;
     }
 
     /// @notice Sync user tower info
-    /// @param user User's address
-    function _syncTower(address user) internal {
-        Tower storage tower = towers[user];
+    /// @param _user User's address
+    function _syncTower(address _user) internal {
+        Tower storage tower = towers[_user];
         _checkValue(tower.timestamp);
         if (tower.yields >= 1) {
             uint256 min = (block.timestamp / 60) - (tower.timestamp / 60);
-            if (min + towers[user].min > 24) {
+            if (min + tower.min > 24) {
                 min = 24 - tower.min;
             }
             uint256 yield = min * tower.yields;
 
-            tower.cupCollected += yield;
-            tower.totalCupReceived += yield;
+            tower.gameETHCollected += yield;
+            tower.totalGameETHReceived += yield;
             tower.min += min;
-            emit SyncTower(user, yield, min, block.timestamp);
+            emit SyncTower(_user, yield, min);
         }
         tower.timestamp = block.timestamp;
     }
 
     /// @notice Helper function for getting upgrade price for the floor and builder
-    /// @param floorId Floor id
-    /// @param builderId Builder id
+    /// @param _floorId Floor id
+    /// @param _builderId Builder id
     function _getUpgradePrice(
-        uint256 floorId,
-        uint256 builderId
+        uint256 _floorId,
+        uint256 _builderId
     ) private pure returns (uint256) {
-        if (builderId == 1)
-            return [434, 21, 42, 77, 168, 280, 504, 630][floorId];
-        if (builderId == 2) return [7, 11, 21, 35, 63, 112, 280, 350][floorId];
-        if (builderId == 3) return [9, 14, 28, 49, 84, 168, 336, 560][floorId];
-        if (builderId == 4)
-            return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
-        if (builderId == 5)
-            return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
+        if (_builderId == 1)
+            return [434, 21, 42, 77, 168, 280, 504, 630][_floorId];
+        if (_builderId == 2)
+            return [7, 11, 21, 35, 63, 112, 280, 350][_floorId];
+        if (_builderId == 3)
+            return [9, 14, 28, 49, 84, 168, 336, 560][_floorId];
+        if (_builderId == 4)
+            return [11, 21, 35, 63, 112, 210, 364, 630][_floorId];
+        if (_builderId == 5)
+            return [15, 28, 49, 84, 140, 252, 448, 1120][_floorId];
         revert IncorrectBuilderId();
     }
 
     /// @notice Helper function for getting yield for the floor and builder
-    /// @param floorId Floor id
-    /// @param builderId Builder id
+    /// @param _floorId Floor id
+    /// @param _builderId Builder id
     function _getYield(
-        uint256 floorId,
-        uint256 builderId
+        uint256 _floorId,
+        uint256 _builderId
     ) private pure returns (uint256) {
-        if (builderId == 1)
-            return [467, 226, 294, 606, 1163, 1617, 2267, 1760][floorId];
-        if (builderId == 2)
-            return [41, 37, 121, 215, 305, 415, 890, 389][floorId];
-        if (builderId == 3)
-            return [170, 51, 218, 317, 432, 351, 357, 1030][floorId];
-        if (builderId == 4)
-            return [218, 92, 270, 410, 596, 858, 972, 1045][floorId];
-        if (builderId == 5)
-            return [239, 98, 381, 551, 742, 1007, 1188, 2416][floorId];
+        if (_builderId == 1)
+            return [467, 226, 294, 606, 1163, 1617, 2267, 1760][_floorId];
+        if (_builderId == 2)
+            return [41, 37, 121, 215, 305, 415, 890, 389][_floorId];
+        if (_builderId == 3)
+            return [170, 51, 218, 317, 432, 351, 357, 1030][_floorId];
+        if (_builderId == 4)
+            return [218, 92, 270, 410, 596, 858, 972, 1045][_floorId];
+        if (_builderId == 5)
+            return [239, 98, 381, 551, 742, 1007, 1188, 2416][_floorId];
         revert IncorrectBuilderId();
     }
 
     /// @notice Function performs buying CodeupERC20 from V2 pool
     function _buyCodeupERC20(
+        address _router,
         address _weth,
         address _codeupERC20,
         uint256 _wethAmount,
         uint256 _amountOutMin,
         address _currentContract
     ) private returns (uint256[] memory swapResult) {
-        address uniswapV2RouterCached = uniswapV2Router;
         address[] memory path = new address[](2);
         path[0] = _weth;
         path[1] = _codeupERC20;
-        uint256[] memory amounts = IUniswapV2Router(uniswapV2RouterCached)
-            .getAmountsOut(_wethAmount, path);
-        IERC20(_weth).safeIncreaseAllowance(uniswapV2RouterCached, _wethAmount);
-        swapResult = IUniswapV2Router(uniswapV2RouterCached)
-            .swapExactTokensForTokens(
-                amounts[0],
-                _amountOutMin,
-                path,
-                _currentContract,
-                block.timestamp
-            );
+        uint256[] memory amounts = IUniswapV2Router(_router).getAmountsOut(
+            _wethAmount,
+            path
+        );
+        IERC20(_weth).safeIncreaseAllowance(_router, _wethAmount);
+        swapResult = IUniswapV2Router(_router).swapExactTokensForTokens(
+            amounts[0],
+            _amountOutMin,
+            path,
+            _currentContract,
+            block.timestamp
+        );
+        emit BuyCodeupERC20(swapResult[1]);
     }
 
     /// @notice Function perfoms adding liquidity to uniswapV2Pool
     function _addLiquidity(
-        address tokenA,
-        address tokenB,
-        uint amountADesired,
-        uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
-        address currentContract
+        address _router,
+        address _tokenA,
+        address _tokenB,
+        uint _amountADesired,
+        uint _amountBDesired,
+        uint _amountAMin,
+        uint _amountBMin,
+        address _currentContract
     ) private {
-        address uniswapV2RouterCached = uniswapV2Router;
-        IERC20(tokenA).safeIncreaseAllowance(
-            uniswapV2RouterCached,
-            amountADesired
-        );
-        IERC20(tokenB).safeIncreaseAllowance(
-            uniswapV2RouterCached,
-            amountBDesired
-        );
-        IUniswapV2Router(uniswapV2RouterCached).addLiquidity(
-            tokenA,
-            tokenB,
-            amountADesired,
-            amountBDesired,
-            amountAMin,
-            amountBMin,
-            currentContract,
+        IERC20(_tokenA).safeIncreaseAllowance(_router, _amountADesired);
+        IERC20(_tokenB).safeIncreaseAllowance(_router, _amountBDesired);
+        IUniswapV2Router(_router).addLiquidity(
+            _tokenA,
+            _tokenB,
+            _amountADesired,
+            _amountBDesired,
+            _amountAMin,
+            _amountBMin,
+            _currentContract,
             block.timestamp
         );
+        emit LiquidityAdded(_amountADesired, _amountBDesired);
     }
 
     /// @notice Function for locking LP tokens.
     /// If contract has LP tokens, it will send them to address(0)
-    function _lockLP(address currentContract) private {
+    function _lockLP(address _currentContract) private {
         address uniswapV2PoolCached = uniswapV2Pool;
-        if (IERC20(uniswapV2PoolCached).balanceOf(currentContract) >= 1) {
-            IERC20(uniswapV2PoolCached).safeTransfer(
-                address(0),
-                IERC20(uniswapV2PoolCached).balanceOf(currentContract)
-            );
+        uint256 lpBalance = IERC20(uniswapV2PoolCached).balanceOf(
+            _currentContract
+        );
+        if (lpBalance >= 1) {
+            IERC20(uniswapV2PoolCached).safeTransfer(address(0), lpBalance);
         }
+        emit LiquidityLocked(lpBalance);
     }
 
-    function _selfBalance() private view returns (uint256) {
-        uint256 self;
+    /// @notice Function for getting contract balance
+    function _selfBalance() private view returns (uint256 self) {
         assembly {
             self := selfbalance()
         }
-        return self;
     }
 
-    function _checkValue(uint256 argument) private pure {
-        require(argument > 0, ZeroValue());
+    /// @notice Function for checking value is not zero
+    function _checkValue(uint256 _argument) private pure {
+        require(_argument != 0, ZeroValue());
     }
 }

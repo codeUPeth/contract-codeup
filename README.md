@@ -3,25 +3,8 @@
 Welcome to **💎 CodeUP 💎**, your portal to Ethereum's rich history and promising future! 🏰🚀
 
 ### 🎮 Game Mechanics 🎮
+[**More Details**](https://mirror.xyz/codeup.eth/-FKjkLFNTgEGUcdXjriutrqgt6w1A8VkV4lqBXOdH88)
 
-1. **🏢 Building Tower 🏢**: Immerse yourself in Ethereum's journey ✈️💵 by purchasing tower floors using **ETH 💎**. Each floor represents a milestone on Ethereum's roadmap. As you ascend your tower, you'll explore Ethereum's past, present, and future! 🌆 The CodeUp Tower boasts eight distinctive floors 👷🏽, each representing a pivotal stage in your ascent to greatness! Within these floors, you'll discover the opportunity to amplify your earnings by accommodating skilled builder's 👨‍🚀. However, there's a crucial stipulation—you must populate each floor with five builder's 👨‍🚀 before unlocking the next tier. 🧑‍💻🔑
-
-2. **💰 Earning Rewards 💰**: Your tower generates rewards in **CUP💵** over time. Claim these rewards regularly to fuel your Ethereum ambitions and advance further on the Ethereum roadmap! 💰✨  
-   ⚠️ Users must collect their earned rewards at least once every 24 minutes to avoid missing out on potential rewards. ⚠️
-
-3. **🚀 Receive CUP 🚀**: Upon successfully completing the game with 40 builders, you can **claim 1 CUP** tokens! 🌟🚀
-
-4. **📈 Sell or Hold CUP**: After claiming, you can either **sell your CUP** on the **UniswapV2 pool** for ETH, or **hold onto it** for potential future gains. The value of CUP **increases** as more players join the game and invest in their towers. 💎🚀
-
-### 🌟 Smart Contract Features 🌟
-
-- **👨‍💼 Tower Management 👨‍💼**: Monitor your tower's progress, including your CUP balance, earned rewards, builder's count, and more. Dive deep into Ethereum's past, present, and future with each floor you unlock! 📊🏰
-
-- **🔝 Upgrade System 🔝**: Enhance your tower's capabilities by upgrading floors and adding more builders. Explore new chapters of Ethereum's story and unlock greater rewards as you ascend! 🌟🚀
-
-- **📊 Dynamic Pricing**: The **codeUP token** follows a **dynamic pricing model**. As more players add CUP to their towers, the **token price increases**, providing greater rewards to early participants and enhancing liquidity through the UniswapV2 pool. 🌐
-
-Embark on an unforgettable journey through Ethereum's past, present, and future with CodeUp! Build your legacy, claim your rewards, and reach for the Ethereum sky! 🌟🌈
 
 ## 📜 Contracts 📜
 
