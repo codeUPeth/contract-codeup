@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.27;
 
 import {IWETH, IERC20} from "./interfaces/IWETH.sol";
 import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 ///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
 ///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
@@ -16,7 +17,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /// @title Codeup contract
 /// @notice This contract is used for the Codeup game
-contract Codeup is ReentrancyGuard {
+contract Codeup is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     struct Tower {
@@ -26,19 +27,19 @@ contract Codeup is ReentrancyGuard {
         uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
         uint256 min; /// @notice User's time in the tower
-        uint8[8] builders; /// @notice User's builders count on each floor
         uint256 totalCupSpend; /// @notice User's total cup spend
         uint256 totalCupReceived; /// @notice User's total cup received
+        uint8[8] builders; /// @notice User's builders count on each floor
     }
 
     /// @notice CodeupERC20 token amount for winner
-    uint256 public constant TOKEN_AMOUNT_FOR_WINNER = 1 ether;
+    uint256 private constant TOKEN_AMOUNT_FOR_WINNER = 1 ether;
     /// @notice Token amount in ETH needed for first luqidity
-    uint256 public constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
+    uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
-    uint256 public constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
+    uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
     /// @notice Withdraw commission 25% for rewards pool, 25% for liquidity pool
-    uint256 public constant WITHDRAW_COMMISSION = 50;
+    uint256 private constant WITHDRAW_COMMISSION = 50;
 
     /// @notice UniswapV2Router address
     address immutable uniswapV2Router;
@@ -67,6 +68,15 @@ contract Codeup is ReentrancyGuard {
     mapping(address => bool) public isClaimed;
     /// @notice User's tower info
     mapping(address => Tower) public towers;
+
+    error ZeroValue();
+    error IncorrectBuilderId();
+    error NotStarted();
+    error TransferFailed();
+    error MaxFloorsReached();
+    error NeedToBuyPreviousBuilder();
+    error ClaimForbidden();
+    error AlreadyClaimed();
 
     /// @notice Emmited when user created tower
     /// @param user User's address
@@ -124,9 +134,9 @@ contract Codeup is ReentrancyGuard {
         uint256 _cupPrice,
         address _uniswapV2Router,
         address _codeupERC20
-    ) {
-        require(_cupPrice > 0);
-        require(_startDate > 0);
+    ) payable Ownable(msg.sender) {
+        _checkValue(_cupPrice);
+        _checkValue(_startDate);
         startUNIX = _startDate;
         cupPrice = _cupPrice;
         cupForWithdrawRate = _cupPrice / 1000;
@@ -136,22 +146,28 @@ contract Codeup is ReentrancyGuard {
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
     }
 
-    receive() external payable {}
+    receive() external payable {
+        IWETH(weth).deposit{value: msg.value}();
+    }
 
     /// @notice Add cup to the tower
     function addCUP() external payable nonReentrant {
         uint256 tokenAmount = msg.value;
-        require(block.timestamp > startUNIX, "We are not live yet!");
+        require(block.timestamp > startUNIX, NotStarted());
         uint256 cup = tokenAmount / cupPrice;
-        require(cup > 0, "Zero cup amount");
+        _checkValue(cup);
         address user = msg.sender;
-        totalInvested += tokenAmount;
-        if (towers[user].timestamp == 0) {
-            totalTowers++;
-            towers[user].timestamp = block.timestamp;
+        uint256 totalInvestedBedore = totalInvested;
+        totalInvested = totalInvestedBedore + tokenAmount;
+
+        Tower storage tower = towers[user];
+        if (tower.timestamp == 0) {
+            uint256 totalTowersBefore = totalTowers;
+            totalTowers = totalTowersBefore + 1;
+            tower.timestamp = block.timestamp;
             emit TowerCreated(user);
         }
-        towers[user].cup += cup;
+        tower.cup += cup;
 
         uint256 ethAmount = (tokenAmount * 10) / 100;
         IWETH(weth).deposit{value: ethAmount}();
@@ -161,50 +177,54 @@ contract Codeup is ReentrancyGuard {
     /// @notice Withdraw earned cup from the tower
     function withdraw() external nonReentrant {
         address user = msg.sender;
-        uint256 cup = towers[user].cupForWithdraw * cupForWithdrawRate;
-        uint256 amount = address(this).balance < cup
-            ? address(this).balance
-            : cup;
-        if (amount > 0) {
+        Tower storage tower = towers[user];
+        uint256 contractBalance = _selfBalance();
+        uint256 cup = tower.cupForWithdraw * cupForWithdrawRate;
+        uint256 amount = contractBalance < cup ? contractBalance : cup;
+
+        if (amount >= 1) {
             uint256 commission = (amount * WITHDRAW_COMMISSION) / 100;
             amount -= commission;
             /// 25% commission to pool
             /// 25% commission for rewards
-            uint256 amountForPool = commission / 2;
+            uint256 amountForPool = commission >> 1;
             IWETH(weth).deposit{value: amountForPool}();
         }
-        towers[user].cupForWithdraw = 0;
-        _sendNative(user, amount);
+        tower.cupForWithdraw = 0;
+        (bool success, ) = user.call{value: amount}("");
+        require(success, TransferFailed());
         emit Withdraw(user, amount);
     }
 
     /// @notice Collect earned cup from the tower to game balance
     function collect() external {
         address user = msg.sender;
+        Tower storage tower = towers[user];
         _syncTower(user);
-        towers[user].min = 0;
-        uint256 cupCollected = towers[user].cupCollected;
-        towers[user].cupForWithdraw += cupCollected;
-        towers[user].cupCollected = 0;
+        tower.min = 0;
+        uint256 cupCollected = tower.cupCollected;
+        tower.cupForWithdraw += cupCollected;
+        tower.cupCollected = 0;
         emit Collect(user, cupCollected);
     }
 
     /// @notice Reinvest earned cup to the tower
     function reinvest() external {
         address user = msg.sender;
-        require(towers[user].cupForWithdraw > 0, "No cup to reinvest");
-        uint256 cupForWithdraw = towers[user].cupForWithdraw *
-            cupForWithdrawRate;
-        uint256 amount = address(this).balance < cupForWithdraw
-            ? address(this).balance
+        uint256 contractBalance = _selfBalance();
+        Tower storage tower = towers[user];
+        _checkValue(tower.cupForWithdraw);
+        uint256 cupForWithdraw = tower.cupForWithdraw * cupForWithdrawRate;
+        uint256 amount = contractBalance < cupForWithdraw
+            ? contractBalance
             : cupForWithdraw;
-        towers[user].cupForWithdraw = 0;
+        tower.cupForWithdraw = 0;
         emit Withdraw(user, amount);
 
         uint256 cup = amount / cupPrice;
-        require(cup > 0, "Zero cup");
+        _checkValue(cup);
         totalInvested += amount;
-        towers[user].cup += cup;
+        tower.cup += cup;
 
         uint256 ethAmount = (amount * 10) / 100;
         IWETH(weth).deposit{value: ethAmount}();
@@ -214,23 +234,24 @@ contract Codeup is ReentrancyGuard {
     /// @notice Upgrade tower
     /// @param floorId Floor id
     function upgradeTower(uint256 floorId) external {
-        require(floorId < 8, "Max 8 floors");
+        require(floorId < 8, MaxFloorsReached());
         address user = msg.sender;
         if (floorId > 0) {
             require(
                 towers[user].builders[floorId - 1] >= 5,
-                "Need to buy previous tower"
+                NeedToBuyPreviousBuilder()
             );
         }
         _syncTower(user);
-        towers[user].builders[floorId]++;
+        Tower storage tower = towers[user];
+        tower.builders[floorId]++;
         totalBuilders++;
-        uint256 builders = towers[user].builders[floorId];
+        uint256 builders = tower.builders[floorId];
         uint256 cupSpend = _getUpgradePrice(floorId, builders);
-        towers[user].cup -= cupSpend;
-        towers[user].totalCupSpend += cupSpend;
+        tower.cup -= cupSpend;
+        tower.totalCupSpend += cupSpend;
         uint256 yield = _getYield(floorId, builders);
-        towers[user].yields += yield;
+        tower.yields += yield;
         emit UpgradeTower(msg.sender, floorId, cupSpend, yield);
     }
 
@@ -239,15 +260,19 @@ contract Codeup is ReentrancyGuard {
     /// Claiming possible only once.
     /// @param _account Account address
     function claimCodeupERC20(address _account) external {
-        require(isClaimAllowed(_account), "Claim Forbidden");
-        require(!isClaimed[_account], "Already Claimed");
-        uint256 wethBalance = IERC20(weth).balanceOf(address(this));
+        require(isClaimAllowed(_account), ClaimForbidden());
+        require(!isClaimed[_account], AlreadyClaimed());
+        address wethCached = weth;
+        address currentContract = address(this);
+        uint256 wethBalance = IERC20(wethCached).balanceOf(currentContract);
+        address codeupERC20Cached = codeupERC20;
+
         /// if pool not created, create pool
         if (uniswapV2Pool == address(0)) {
             /// Create uniswap pool
             uniswapV2Pool = IUniswapV2Factory(uniswapV2Factory).createPair(
-                weth,
-                codeupERC20
+                wethCached,
+                codeupERC20Cached
             );
 
             uint256 firstLiquidity = wethBalance > MAX_FIRST_LIQUIDITY_AMOUNT
@@ -255,28 +280,41 @@ contract Codeup is ReentrancyGuard {
                 : wethBalance;
 
             _addLiquidity(
-                weth,
-                codeupERC20,
+                wethCached,
+                codeupERC20Cached,
                 firstLiquidity,
-                FIRST_LIQUIDITY_GAME_TOKEN
+                FIRST_LIQUIDITY_GAME_TOKEN,
+                0,
+                0,
+                currentContract
             );
         } else {
             // buy codeupERC20 for WETH
-            if (wethBalance > 0) {
+            if (wethBalance >= 1) {
                 uint256[] memory swapResult = _buyCodeupERC20(
-                    weth,
-                    codeupERC20,
-                    wethBalance / 2
+                    wethCached,
+                    codeupERC20Cached,
+                    wethBalance >> 1,
+                    0,
+                    currentContract
                 );
 
-                _addLiquidity(weth, codeupERC20, swapResult[0], swapResult[1]);
+                _addLiquidity(
+                    wethCached,
+                    codeupERC20Cached,
+                    swapResult[0],
+                    swapResult[1],
+                    0,
+                    0,
+                    currentContract
+                );
             }
         }
         /// Set claim status to true, user can't claim token again.
         /// Claiming possible only once.
         isClaimed[_account] = true;
         /// Lock LP tokens
-        _lockLP();
+        _lockLP(currentContract);
         /// Transfer CodeupERC20 amount to the user
         IERC20(codeupERC20).safeTransfer(_account, TOKEN_AMOUNT_FOR_WINNER);
         emit TokenClaimed(_account, TOKEN_AMOUNT_FOR_WINNER);
@@ -307,30 +345,21 @@ contract Codeup is ReentrancyGuard {
     /// @notice Sync user tower info
     /// @param user User's address
     function _syncTower(address user) internal {
-        require(towers[user].timestamp > 0, "User is not registered");
-        if (towers[user].yields > 0) {
-            uint256 min = (block.timestamp / 60) -
-                (towers[user].timestamp / 60);
+        Tower storage tower = towers[user];
+        _checkValue(tower.timestamp);
+        if (tower.yields >= 1) {
+            uint256 min = (block.timestamp / 60) - (tower.timestamp / 60);
             if (min + towers[user].min > 24) {
-                min = 24 - towers[user].min;
+                min = 24 - tower.min;
             }
-            uint256 yield = min * towers[user].yields;
+            uint256 yield = min * tower.yields;
 
-            towers[user].cupCollected += yield;
-            towers[user].totalCupReceived += yield;
-            towers[user].min += min;
+            tower.cupCollected += yield;
+            tower.totalCupReceived += yield;
+            tower.min += min;
             emit SyncTower(user, yield, min, block.timestamp);
         }
-        towers[user].timestamp = block.timestamp;
-    }
-
-    /// @notice This function sends native chain token.
-    /// @param to_ - address of receiver
-    /// @param amount_ - amount of native chain token
-    /// @dev If the transfer fails, the function reverts.
-    function _sendNative(address to_, uint256 amount_) internal {
-        (bool success, ) = to_.call{value: amount_}("");
-        require(success, "Transfer failed.");
+        tower.timestamp = block.timestamp;
     }
 
     /// @notice Helper function for getting upgrade price for the floor and builder
@@ -339,7 +368,7 @@ contract Codeup is ReentrancyGuard {
     function _getUpgradePrice(
         uint256 floorId,
         uint256 builderId
-    ) internal pure returns (uint256) {
+    ) private pure returns (uint256) {
         if (builderId == 1)
             return [434, 21, 42, 77, 168, 280, 504, 630][floorId];
         if (builderId == 2) return [7, 11, 21, 35, 63, 112, 280, 350][floorId];
@@ -348,7 +377,7 @@ contract Codeup is ReentrancyGuard {
             return [11, 21, 35, 63, 112, 210, 364, 630][floorId];
         if (builderId == 5)
             return [15, 28, 49, 84, 140, 252, 448, 1120][floorId];
-        revert("Incorrect builderId");
+        revert IncorrectBuilderId();
     }
 
     /// @notice Helper function for getting yield for the floor and builder
@@ -357,7 +386,7 @@ contract Codeup is ReentrancyGuard {
     function _getYield(
         uint256 floorId,
         uint256 builderId
-    ) internal pure returns (uint256) {
+    ) private pure returns (uint256) {
         if (builderId == 1)
             return [467, 226, 294, 606, 1163, 1617, 2267, 1760][floorId];
         if (builderId == 2)
@@ -368,26 +397,30 @@ contract Codeup is ReentrancyGuard {
             return [218, 92, 270, 410, 596, 858, 972, 1045][floorId];
         if (builderId == 5)
             return [239, 98, 381, 551, 742, 1007, 1188, 2416][floorId];
-        revert("Incorrect builderId");
+        revert IncorrectBuilderId();
     }
 
     /// @notice Function performs buying CodeupERC20 from V2 pool
     function _buyCodeupERC20(
         address _weth,
         address _codeupERC20,
-        uint256 _wethAmount
-    ) internal returns (uint256[] memory swapResult) {
+        uint256 _wethAmount,
+        uint256 _amountOutMin,
+        address _currentContract
+    ) private returns (uint256[] memory swapResult) {
+        address uniswapV2RouterCached = uniswapV2Router;
         address[] memory path = new address[](2);
         path[0] = _weth;
         path[1] = _codeupERC20;
-        uint256[] memory amounts = IUniswapV2Router(uniswapV2Router)
+        uint256[] memory amounts = IUniswapV2Router(uniswapV2RouterCached)
             .getAmountsOut(_wethAmount, path);
-        IERC20(_weth).safeIncreaseAllowance(uniswapV2Router, _wethAmount);
-        swapResult = IUniswapV2Router(uniswapV2Router).swapExactTokensForTokens(
+        IERC20(_weth).safeIncreaseAllowance(uniswapV2RouterCached, _wethAmount);
+        swapResult = IUniswapV2Router(uniswapV2RouterCached)
+            .swapExactTokensForTokens(
                 amounts[0],
-                0,
+                _amountOutMin,
                 path,
-                address(this),
+                _currentContract,
                 block.timestamp
             );
     }
@@ -397,31 +430,53 @@ contract Codeup is ReentrancyGuard {
         address tokenA,
         address tokenB,
         uint amountADesired,
-        uint amountBDesired
-    ) internal {
-        IERC20(tokenA).safeIncreaseAllowance(uniswapV2Router, amountADesired);
-        IERC20(tokenB).safeIncreaseAllowance(uniswapV2Router, amountBDesired);
-        IUniswapV2Router(uniswapV2Router).addLiquidity(
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address currentContract
+    ) private {
+        address uniswapV2RouterCached = uniswapV2Router;
+        IERC20(tokenA).safeIncreaseAllowance(
+            uniswapV2RouterCached,
+            amountADesired
+        );
+        IERC20(tokenB).safeIncreaseAllowance(
+            uniswapV2RouterCached,
+            amountBDesired
+        );
+        IUniswapV2Router(uniswapV2RouterCached).addLiquidity(
             tokenA,
             tokenB,
             amountADesired,
             amountBDesired,
-            0,
-            0,
-            address(this),
+            amountAMin,
+            amountBMin,
+            currentContract,
             block.timestamp
         );
     }
 
     /// @notice Function for locking LP tokens.
     /// If contract has LP tokens, it will send them to address(0)
-    function _lockLP() internal {
+    function _lockLP(address currentContract) private {
         address uniswapV2PoolCached = uniswapV2Pool;
-        if (IERC20(uniswapV2PoolCached).balanceOf(address(this)) > 0) {
+        if (IERC20(uniswapV2PoolCached).balanceOf(currentContract) >= 1) {
             IERC20(uniswapV2PoolCached).safeTransfer(
                 address(0),
-                IERC20(uniswapV2PoolCached).balanceOf(address(this))
+                IERC20(uniswapV2PoolCached).balanceOf(currentContract)
             );
         }
+    }
+
+    function _selfBalance() private view returns (uint256) {
+        uint256 self;
+        assembly {
+            self := selfbalance()
+        }
+        return self;
+    }
+
+    function _checkValue(uint256 argument) private pure {
+        require(argument > 0, ZeroValue());
     }
 }

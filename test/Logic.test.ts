@@ -111,9 +111,8 @@ describe("Codeup tests", function () {
       expect(await gameContract.totalInvested()).to.be.equal(ethAmount);
     });
     it("should revert buy coins if amount is zero", async () => {
-      await expect(
-        gameContract.connect(player1).addCUP({ value: 0 })
-      ).to.be.revertedWith("Zero cup amount");
+      await expect(gameContract.connect(player1).addCUP({ value: 0 })).to.be
+        .reverted;
     });
     it("should revert buy coins if game not started", async () => {
       const gameFactorty = await ethers.getContractFactory("Codeup");
@@ -127,9 +126,8 @@ describe("Codeup tests", function () {
       await game.deployed();
 
       const ethAmount = ethers.utils.parseEther("1");
-      await expect(
-        game.connect(player1).addCUP({ value: ethAmount })
-      ).to.be.revertedWith("We are not live yet!");
+      await expect(game.connect(player1).addCUP({ value: ethAmount })).to.be
+        .reverted;
     });
     it("buy coins again for player1", async () => {
       const ethAmount = ethers.utils.parseEther("1");
@@ -174,19 +172,15 @@ describe("Codeup tests", function () {
       }
     });
     it("should revert upgrade tower: 2 floor, 1 coder --- by player1", async () => {
-      await expect(
-        gameContract.connect(player1).upgradeTower(1)
-      ).to.be.revertedWith("Need to buy previous tower");
+      await expect(gameContract.connect(player1).upgradeTower(1)).to.be
+        .reverted;
     });
     it("should revert upgrade tower: 9 floor, 1 coder --- by player1", async () => {
-      await expect(
-        gameContract.connect(player1).upgradeTower(8)
-      ).to.be.revertedWith("Max 8 floors");
+      await expect(gameContract.connect(player1).upgradeTower(8)).to.be
+        .reverted;
     });
     it("should revert collectMoney if user non registered", async () => {
-      await expect(gameContract.connect(player3).collect()).to.be.revertedWith(
-        "User is not registered"
-      );
+      await expect(gameContract.connect(player3).collect()).to.be.reverted;
     });
 
     it("should inrease time for 12 hours and buy all floors for player3", async () => {
@@ -237,9 +231,8 @@ describe("Codeup tests", function () {
       }
     });
     it("should revert by floor for player2 if already bought", async () => {
-      await expect(
-        gameContract.connect(player2).upgradeTower(0)
-      ).to.be.revertedWith("Incorrect builderId");
+      await expect(gameContract.connect(player2).upgradeTower(0)).to.be
+        .reverted;
     });
     it("simulate game flow for 5 users", async () => {
       for (let k = 10; k < 16; k++) {
@@ -310,7 +303,7 @@ describe("Codeup tests", function () {
     it("should revert claim if user already claimed", async () => {
       await expect(
         gameContract.connect(player3).claimCodeupERC20(player3.address)
-      ).to.be.revertedWith("Already Claimed");
+      ).to.be.reverted;
     });
     it("should claim for user 2", async () => {
       await gameContract
@@ -341,7 +334,7 @@ describe("Codeup tests", function () {
     it("should revert claim if user didn't buy all floors", async () => {
       await expect(
         gameContract.connect(player1).claimCodeupERC20(player1.address)
-      ).to.be.revertedWith("Claim Forbidden");
+      ).to.be.reverted;
     });
     it("should claim and don't add liquidity if weth balance == 0", async () => {
       await gameContract
@@ -366,9 +359,8 @@ describe("Codeup tests", function () {
       expect(towerStatsAfter.cup).to.be.gt(towerStatsBefore.cup);
     });
     it("should revert reinvest if user has no money", async () => {
-      await expect(
-        gameContract.connect(accounts[15]).reinvest()
-      ).to.be.revertedWith("No cup to reinvest");
+      await expect(gameContract.connect(accounts[15]).reinvest()).to.be
+        .reverted;
     });
   });
 });
