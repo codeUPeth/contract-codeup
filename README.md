@@ -13,8 +13,8 @@ Project smart contracts:
 - **CodeupERC20.sol** - ERC20 token for game winner's. Name: CodeUP, Symbol: CUP.
 
 ## 📜 Deployments 📜
-**Codeup** - 0x61967661b3DE58366220Fa6fef2CaEF7cF55f746.  
-**codeUP(CUP)** - 0x28Ae72129AFD1e8dD364D2652d067191181a1bAF
+**Codeup** - 0x1B82536914F3fD162e1EDa12ddB2E05cd961Fe57.  
+**codeUP(CUP)** - 0xDE698Ef96434CE7b12eDdbCc92E12C0464c2E2Ed
 
 ## 📚 Technical Stack 📚
 
