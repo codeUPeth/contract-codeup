@@ -2,11 +2,11 @@
 // Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity 0.8.27;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CodeupERC20 is ERC20, Ownable {
-    uint256 private constant MAX_SUPPLY = 1000_000_000 ether;
+    uint256 private constant _MAX_SUPPLY = 1000_000_000 ether;
 
     error TransferFailed();
 
@@ -15,6 +15,6 @@ contract CodeupERC20 is ERC20, Ownable {
         string memory _name,
         string memory _symbol
     ) payable ERC20(_name, _symbol) Ownable(_initialOwner) {
-        _mint(_initialOwner, MAX_SUPPLY);
+        _mint(_initialOwner, _MAX_SUPPLY);
     }
 }

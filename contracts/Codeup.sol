@@ -41,9 +41,9 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant WITHDRAW_COMMISSION = 66;
 
     /// @notice UniswapV2Router address
-    address immutable uniswapV2Router;
+    address public immutable uniswapV2Router;
     /// @notice UniswapV2Factory address
-    address immutable uniswapV2Factory;
+    address public immutable uniswapV2Factory;
     /// @notice CodeupERC20 token address
     address public immutable codeupERC20;
     /// @notice WETH address
@@ -442,10 +442,10 @@ contract Codeup is ReentrancyGuard {
         address _router,
         address _tokenA,
         address _tokenB,
-        uint _amountADesired,
-        uint _amountBDesired,
-        uint _amountAMin,
-        uint _amountBMin,
+        uint256 _amountADesired,
+        uint256 _amountBDesired,
+        uint256 _amountAMin,
+        uint256 _amountBMin,
         address _currentContract
     ) private {
         IERC20(_tokenA).safeIncreaseAllowance(_router, _amountADesired);
