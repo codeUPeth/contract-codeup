@@ -5,7 +5,7 @@ Welcome to **💎 CodeUP 💎**, your portal to Ethereum's rich history and prom
 ### 🎮 Game Mechanics 🎮
 [**More Details**](https://mirror.xyz/codeup.eth/-FKjkLFNTgEGUcdXjriutrqgt6w1A8VkV4lqBXOdH88)
 
-### 🎮 Audit Report 🎮
+### 🕵 Audit Report 🕵
 [**Report**](https://solidityscan.com/published-report/block/91b45153d9793d45)
 
 ## 📜 Contracts 📜
