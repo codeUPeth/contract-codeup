@@ -1,0 +1,7 @@
+[
+  "constructor(address)",
+  "function addTokens() payable",
+  "function collect()",
+  "function upgrade(uint256)",
+  "function withdraw()"
+]

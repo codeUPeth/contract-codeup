@@ -1,0 +1,5 @@
+[
+  "function addTokens() payable",
+  "function collect()",
+  "function upgrade(uint256)"
+]

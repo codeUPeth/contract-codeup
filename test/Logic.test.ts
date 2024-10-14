@@ -139,7 +139,7 @@ describe("Codeup tests", function () {
         managerBalanceBefore.add(predictedFee)
       );
     });
-    it("buy gameETH for player2, ref = player1", async () => {
+    it("buy gameETH for player2", async () => {
       const ethAmount = ethers.utils.parseEther("1");
       const predictedCoinsAmount = convertETHtoCoin(ethAmount);
       const predictedFee = calcManagerFee(ethAmount);
@@ -171,15 +171,15 @@ describe("Codeup tests", function () {
         }
       }
     });
-    it("should revert upgrade tower: 2 floor, 1 coder --- by player1", async () => {
+    it("should revert upgrade tower if incorrect floorID", async () => {
       await expect(gameContract.connect(player1).upgradeTower(1)).to.be
         .reverted;
     });
-    it("should revert upgrade tower: 9 floor, 1 coder --- by player1", async () => {
+    it("should revert upgrade tower if incorrect floorID", async () => {
       await expect(gameContract.connect(player1).upgradeTower(8)).to.be
         .reverted;
     });
-    it("should revert collectgameETH if user non registered", async () => {
+    it("should revert collect if user non registered", async () => {
       await expect(gameContract.connect(player3).collect()).to.be.reverted;
     });
 
@@ -361,6 +361,87 @@ describe("Codeup tests", function () {
     it("should revert reinvest if user has no gameETH", async () => {
       await expect(gameContract.connect(accounts[15]).reinvest()).to.be
         .reverted;
+    });
+  });
+  describe("Test incorrect yield calculation", async () => {
+    it("should revert _getYield if passed incorrect builder", async () => {
+      const TEST_CODEUP_FACTORY = await ethers.getContractFactory("TestCodeup");
+      const testGame = await TEST_CODEUP_FACTORY.deploy(
+        1,
+        COINS_PRICE,
+        UniswapV2Router,
+        gameToken.address
+      );
+
+      await expect(testGame.getYield(1, 6)).to.be.revertedWith(
+        "IncorrectBuilderId()"
+      );
+    });
+  });
+  describe("Test additional checks", async () => {
+    let game: Codeup;
+    let gameToken: CodeupERC20;
+    before(async () => {
+      const CODEUP_FACTORY = await ethers.getContractFactory("Codeup");
+      const CODEUP_TOKEN_FACTORY = await ethers.getContractFactory(
+        "CodeupERC20"
+      );
+
+      gameToken = await CODEUP_TOKEN_FACTORY.deploy(
+        deployer.address,
+        "GT",
+        "GT"
+      );
+      await gameToken.deployed();
+
+      game = await CODEUP_FACTORY.deploy(
+        1,
+        COINS_PRICE,
+        UniswapV2Router,
+        gameToken.address
+      );
+      await game.deployed();
+    });
+    it("should withdraw full contract balance if not enough ETH", async () => {
+      const ethAmount = ethers.utils.parseEther("0.02");
+      await game.connect(player1).addGameETH({ value: ethAmount });
+
+      for (let i = 0; i < 8; i++) {
+        for (let j = 1; j <= 5; j++) {
+          await game.connect(player1).upgradeTower(i);
+        }
+      }
+
+      for (let i = 0; i < 200; i++) {
+        await game.connect(player1).collect();
+        await game.connect(player1).withdraw();
+        await ethers.provider.send("evm_increaseTime", [3600]);
+        const balance = await ethers.provider.getBalance(game.address);
+        if (balance.eq(0)) {
+          break;
+        }
+      }
+    });
+    it("should reinvest all eth balance if not enough ETH", async () => {
+      const ethAmount = ethers.utils.parseEther("0.01");
+      await game.connect(player2).addGameETH({ value: ethAmount });
+
+      for (let i = 0; i < 8; i++) {
+        for (let j = 1; j <= 5; j++) {
+          await game.connect(player2).upgradeTower(i);
+        }
+      }
+
+      for (let i = 0; i < 203; i++) {
+        await ethers.provider.send("evm_increaseTime", [3600]);
+        await game.connect(player2).collect();
+        if (i == 202) {
+          await expect(game.connect(player2).reinvest()).to.be.reverted;
+          break;
+        } else {
+          await game.connect(player2).reinvest();
+        }
+      }
     });
   });
 });

@@ -376,7 +376,7 @@ contract Codeup is ReentrancyGuard {
     function _getUpgradePrice(
         uint256 _floorId,
         uint256 _builderId
-    ) private pure returns (uint256) {
+    ) internal pure returns (uint256) {
         if (_builderId == 1)
             return [434, 21, 42, 77, 168, 280, 504, 630][_floorId];
         if (_builderId == 2)
@@ -396,7 +396,7 @@ contract Codeup is ReentrancyGuard {
     function _getYield(
         uint256 _floorId,
         uint256 _builderId
-    ) private pure returns (uint256) {
+    ) internal pure returns (uint256) {
         if (_builderId == 1)
             return [467, 226, 294, 606, 1163, 1617, 2267, 1760][_floorId];
         if (_builderId == 2)

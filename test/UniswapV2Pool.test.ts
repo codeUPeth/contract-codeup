@@ -87,7 +87,6 @@ const buyAllCoders = async (
   gameContract: Codeup,
   player: SignerWithAddress
 ) => {
-  console.log(player.address);
   const neededETH = ethers.utils.parseEther("0.009");
   await gameContract.connect(player).addGameETH({
     value: neededETH,
