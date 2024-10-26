@@ -263,7 +263,15 @@ contract Codeup is ReentrancyGuard {
     /// Only users with 40 builders can claim game token
     /// Claiming possible only once.
     /// @param _account Account address
-    function claimCodeupERC20(address _account) external {
+    /// @param _amountAMin Min amount of WETH for adding liquidity
+    /// @param _amountBMin Min amount of CodeupERC20 for adding liquidity
+    /// @param _amountOutMin Min amount of CodeupERC20 for buying
+    function claimCodeupERC20(
+        address _account,
+        uint256 _amountAMin,
+        uint256 _amountBMin,
+        uint256 _amountOutMin
+    ) external {
         require(isClaimAllowed(_account), ClaimForbidden());
         require(!isClaimed[_account], AlreadyClaimed());
         address currentContract = address(this);
@@ -285,8 +293,8 @@ contract Codeup is ReentrancyGuard {
                 codeupERC20Memory,
                 firstLiquidity,
                 FIRST_LIQUIDITY_GAME_TOKEN,
-                0,
-                0,
+                _amountAMin,
+                _amountBMin,
                 currentContract
             );
 
@@ -304,7 +312,7 @@ contract Codeup is ReentrancyGuard {
                     wethMemory,
                     codeupERC20Memory,
                     wethBalance >> 1,
-                    0,
+                    _amountOutMin,
                     currentContract
                 );
 
@@ -314,8 +322,8 @@ contract Codeup is ReentrancyGuard {
                     codeupERC20Memory,
                     swapResult[0],
                     swapResult[1],
-                    0,
-                    0,
+                    _amountAMin,
+                    _amountBMin,
                     currentContract
                 );
             }

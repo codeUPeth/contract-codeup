@@ -135,7 +135,7 @@ describe("UniswapV2Pool tests", function () {
         "====================================================================="
       );
       await buyAllCoders(gameContract, player1);
-      await gameContract.claimCodeupERC20(player1.address);
+      await gameContract.claimCodeupERC20(player1.address, 0, 0, 0);
       const gameTokenBalance = await gameToken.balanceOf(player1.address);
       console.log(
         ethers.utils.formatUnits(gameTokenBalance, 18),
@@ -152,7 +152,7 @@ describe("UniswapV2Pool tests", function () {
         "====================================================================="
       );
       await buyAllCoders(gameContract, accounts[0]);
-      await gameContract.claimCodeupERC20(accounts[0].address);
+      await gameContract.claimCodeupERC20(accounts[0].address, 0, 0, 0);
       const gameTokenBalance = await gameToken.balanceOf(accounts[0].address);
       console.log(
         ethers.utils.formatUnits(gameTokenBalance, 18),
@@ -226,7 +226,7 @@ describe("UniswapV2Pool tests", function () {
         );
 
         await buyAllCoders(gameContract, accounts[i]);
-        await gameContract.claimCodeupERC20(accounts[i].address);
+        await gameContract.claimCodeupERC20(accounts[i].address, 0, 0, 0);
         const gameTokenBalance = await gameToken.balanceOf(accounts[i].address);
         console.log(
           ethers.utils.formatUnits(gameTokenBalance, 18),

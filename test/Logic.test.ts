@@ -269,7 +269,11 @@ describe("Codeup tests", function () {
   });
   describe("Test interaction with UniswapV2 pool", async () => {
     it("should create pool and add liquidity after first claim", async () => {
-      await gameContract.connect(player3).claimCodeupERC20(player3.address);
+      const amountAMin = await weth.balanceOf(gameContract.address);
+      const amountBMin = ethers.utils.parseEther("10");
+      await gameContract
+        .connect(player3)
+        .claimCodeupERC20(player3.address, amountAMin, amountBMin, 0);
 
       expect(await gameContract.uniswapV2Pool()).to.be.not.equal(
         ethers.constants.AddressZero
@@ -302,7 +306,7 @@ describe("Codeup tests", function () {
     });
     it("should revert claim if user already claimed", async () => {
       await expect(
-        gameContract.connect(player3).claimCodeupERC20(player3.address)
+        gameContract.connect(player3).claimCodeupERC20(player3.address, 0, 0, 0)
       ).to.be.reverted;
     });
     it("should claim for user 2", async () => {
@@ -311,7 +315,9 @@ describe("Codeup tests", function () {
         .addGameETH({ value: ethers.utils.parseEther("100") });
       const balanceETHBefore = await weth.balanceOf(player2.address);
 
-      await gameContract.connect(player2).claimCodeupERC20(player2.address);
+      await gameContract
+        .connect(player2)
+        .claimCodeupERC20(player2.address, 0, 0, 0);
       await gameToken
         .connect(player2)
         .approve(UniswapV2Router, await gameToken.balanceOf(player2.address));
@@ -333,13 +339,13 @@ describe("Codeup tests", function () {
     });
     it("should revert claim if user didn't buy all floors", async () => {
       await expect(
-        gameContract.connect(player1).claimCodeupERC20(player1.address)
+        gameContract.connect(player1).claimCodeupERC20(player1.address, 0, 0, 0)
       ).to.be.reverted;
     });
     it("should claim and don't add liquidity if weth balance == 0", async () => {
       await gameContract
         .connect(accounts[10])
-        .claimCodeupERC20(accounts[10].address);
+        .claimCodeupERC20(accounts[10].address, 0, 0, 0);
       const balanceWETH = await weth.balanceOf(gameContract.address);
       expect(balanceWETH).to.be.equal(BigNumber.from(0));
     });
