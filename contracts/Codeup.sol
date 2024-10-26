@@ -30,7 +30,8 @@ contract Codeup is ReentrancyGuard {
         uint256 totalGameETHReceived; /// @notice User's total gameETH received
         uint8[8] builders; /// @notice User's builders count on each floor
     }
-
+    /// @notice Precision for math operations
+    uint256 private constant PRECISION = 100;
     /// @notice CodeupERC20 token amount for winner
     uint256 private constant TOKEN_AMOUNT_FOR_WINNER = 1 ether;
     /// @notice Token amount in ETH needed for first luqidity
@@ -39,8 +40,14 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
     /// @notice Withdraw commission 33% for rewards pool, 33% for liquidity pool
     uint256 private constant WITHDRAW_COMMISSION = 66;
+    /// @notice Deposit commission 10% for liquidity pool
+    uint256 private constant DEPOSIT_COMMISSION = 10;
     /// @notice Min amount for adding liquidity
     uint256 private constant MIN_AMOUNT_FOR_ADDING_LIQUIDITY = 0.0001 ether;
+    /// @notice Minutes in hour
+    uint256 private constant MINUTES_IN_HOUR = 60;
+    /// @notice Max minutes for sync tower
+    uint256 private constant MAX_MINUTES_FOR_SYNC = 24;
 
     /// @notice UniswapV2Router address
     address public immutable uniswapV2Router;
@@ -177,7 +184,7 @@ contract Codeup is ReentrancyGuard {
         }
         tower.gameETH += gameETH;
 
-        uint256 ethAmount = (tokenAmount * 10) / 100;
+        uint256 ethAmount = (tokenAmount * DEPOSIT_COMMISSION) / PRECISION;
         IWETH(weth).deposit{value: ethAmount}();
         emit AddGameETH(user, gameETH, tokenAmount, ethAmount);
     }
@@ -196,7 +203,7 @@ contract Codeup is ReentrancyGuard {
         }
 
         if (amount >= 1) {
-            uint256 commission = (amount * WITHDRAW_COMMISSION) / 100;
+            uint256 commission = (amount * WITHDRAW_COMMISSION) / PRECISION;
             amount -= commission;
             uint256 amountForPool = commission >> 1;
             IWETH(weth).deposit{value: amountForPool}();
@@ -243,7 +250,7 @@ contract Codeup is ReentrancyGuard {
         totalInvested = totalInvestedBefore + amount;
         tower.gameETH += gameETH;
 
-        uint256 ethAmount = (amount * 10) / 100;
+        uint256 ethAmount = (amount * DEPOSIT_COMMISSION) / PRECISION;
         IWETH(weth).deposit{value: ethAmount}();
         emit AddGameETH(user, gameETH, amount, ethAmount);
     }
@@ -381,9 +388,10 @@ contract Codeup is ReentrancyGuard {
         Tower storage tower = towers[_user];
         _checkValue(tower.timestamp);
         if (tower.yields >= 1) {
-            uint256 min = (block.timestamp / 60) - (tower.timestamp / 60);
-            if (min + tower.min > 24) {
-                min = 24 - tower.min;
+            uint256 min = (block.timestamp / MINUTES_IN_HOUR) -
+                (tower.timestamp / MINUTES_IN_HOUR);
+            if (min + tower.min > MAX_MINUTES_FOR_SYNC) {
+                min = MAX_MINUTES_FOR_SYNC - tower.min;
             }
             uint256 yield = min * tower.yields;
 
