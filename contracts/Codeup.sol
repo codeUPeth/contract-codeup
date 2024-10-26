@@ -152,6 +152,7 @@ contract Codeup is ReentrancyGuard {
     ) payable {
         _checkValue(_gameETHPrice);
         _checkValue(_startDate);
+        _checkValue(_gameETHPrice / 1000);
         startUNIX = _startDate;
         gameETHPrice = _gameETHPrice;
         gameETHForWithdrawRate = _gameETHPrice / 1000;
