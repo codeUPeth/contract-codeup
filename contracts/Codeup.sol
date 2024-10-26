@@ -39,6 +39,8 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
     /// @notice Withdraw commission 33% for rewards pool, 33% for liquidity pool
     uint256 private constant WITHDRAW_COMMISSION = 66;
+    /// @notice Min amount for adding liquidity
+    uint256 private constant MIN_AMOUNT_FOR_ADDING_LIQUIDITY = 0.0001 ether;
 
     /// @notice UniswapV2Router address
     address public immutable uniswapV2Router;
@@ -295,7 +297,7 @@ contract Codeup is ReentrancyGuard {
             emit PoolCreated(uniswapV2Pool);
         } else {
             // buy codeupERC20 for WETH
-            if (wethBalance >= 1) {
+            if (wethBalance >= MIN_AMOUNT_FOR_ADDING_LIQUIDITY) {
                 uint256[] memory swapResult = _buyCodeupERC20(
                     routerMemory,
                     wethMemory,
