@@ -184,6 +184,11 @@ contract Codeup is ReentrancyGuard {
         uint256 contractBalance = _selfBalance();
         uint256 gameETH = tower.gameETHForWithdraw * gameETHForWithdrawRate;
         uint256 amount = contractBalance < gameETH ? contractBalance : gameETH;
+        if (amount == contractBalance) {
+            tower.gameETHForWithdraw -= (amount / gameETHForWithdrawRate) + 1;
+        } else {
+            tower.gameETHForWithdraw = 0;
+        }
 
         if (amount >= 1) {
             uint256 commission = (amount * WITHDRAW_COMMISSION) / 100;
@@ -191,7 +196,7 @@ contract Codeup is ReentrancyGuard {
             uint256 amountForPool = commission >> 1;
             IWETH(weth).deposit{value: amountForPool}();
         }
-        tower.gameETHForWithdraw = 0;
+
         (bool success, ) = user.call{value: amount}("");
         require(success, TransferFailed());
         emit Withdraw(user, amount);
@@ -220,7 +225,11 @@ contract Codeup is ReentrancyGuard {
         uint256 amount = contractBalance < gameETHForWithdraw
             ? contractBalance
             : gameETHForWithdraw;
-        tower.gameETHForWithdraw = 0;
+        if (amount == contractBalance) {
+            tower.gameETHForWithdraw -= (amount / gameETHForWithdrawRate) + 1;
+        } else {
+            tower.gameETHForWithdraw = 0;
+        }
         emit Withdraw(user, amount);
 
         uint256 gameETH = amount / gameETHPrice;
