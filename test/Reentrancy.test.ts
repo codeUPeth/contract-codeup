@@ -10,7 +10,7 @@ import {
   ClaimCodeupERC20Reentrancy,
 } from "../typechain-types";
 
-const COINS_PRICE = ethers.utils.parseEther("0.000001");
+const COINS_PRICE = ethers.utils.parseEther("0.0000001");
 
 const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 

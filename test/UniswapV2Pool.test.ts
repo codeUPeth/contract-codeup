@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { CodeupERC20, Codeup } from "../typechain-types";
 import { ROUTER, WETH_ABI } from "./abis";
 
-const COINS_PRICE = ethers.utils.parseEther("0.000001");
+const COINS_PRICE = ethers.utils.parseEther("0.0000001");
 const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 
 const calcPoolStats = async (game: Codeup) => {

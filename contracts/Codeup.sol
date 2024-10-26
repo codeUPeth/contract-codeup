@@ -197,7 +197,9 @@ contract Codeup is ReentrancyGuard {
         uint256 gameETH = tower.gameETHForWithdraw * gameETHForWithdrawRate;
         uint256 amount = contractBalance < gameETH ? contractBalance : gameETH;
         if (amount == contractBalance) {
-            tower.gameETHForWithdraw -= (amount / gameETHForWithdrawRate) + 1;
+            tower.gameETHForWithdraw -=
+                (amount / gameETHForWithdrawRate) +
+                (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
         } else {
             tower.gameETHForWithdraw = 0;
         }
@@ -238,7 +240,9 @@ contract Codeup is ReentrancyGuard {
             ? contractBalance
             : gameETHForWithdraw;
         if (amount == contractBalance) {
-            tower.gameETHForWithdraw -= (amount / gameETHForWithdrawRate) + 1;
+            tower.gameETHForWithdraw -=
+                (amount / gameETHForWithdrawRate) +
+                (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
         } else {
             tower.gameETHForWithdraw = 0;
         }
@@ -411,15 +415,15 @@ contract Codeup is ReentrancyGuard {
         uint256 _builderId
     ) internal pure returns (uint256) {
         if (_builderId == 1)
-            return [434, 21, 42, 77, 168, 280, 504, 630][_floorId];
+            return [4340, 210, 420, 770, 1680, 2800, 5040, 6300][_floorId];
         if (_builderId == 2)
-            return [7, 11, 21, 35, 63, 112, 280, 350][_floorId];
+            return [70, 110, 210, 350, 630, 1120, 2800, 3500][_floorId];
         if (_builderId == 3)
-            return [9, 14, 28, 49, 84, 168, 336, 560][_floorId];
+            return [90, 140, 280, 490, 840, 1680, 3360, 5600][_floorId];
         if (_builderId == 4)
-            return [11, 21, 35, 63, 112, 210, 364, 630][_floorId];
+            return [110, 210, 350, 630, 1120, 2100, 3640, 6300][_floorId];
         if (_builderId == 5)
-            return [15, 28, 49, 84, 140, 252, 448, 1120][_floorId];
+            return [150, 280, 490, 840, 1400, 2520, 4480, 11200][_floorId];
         revert IncorrectBuilderId();
     }
 
@@ -431,15 +435,16 @@ contract Codeup is ReentrancyGuard {
         uint256 _builderId
     ) internal pure returns (uint256) {
         if (_builderId == 1)
-            return [467, 226, 294, 606, 1163, 1617, 2267, 1760][_floorId];
+            return
+                [4670, 2260, 2940, 6060, 11630, 16170, 22670, 17600][_floorId];
         if (_builderId == 2)
-            return [41, 37, 121, 215, 305, 415, 890, 389][_floorId];
+            return [410, 370, 1210, 2150, 3050, 4150, 8900, 3890][_floorId];
         if (_builderId == 3)
-            return [170, 51, 218, 317, 432, 351, 357, 1030][_floorId];
+            return [1700, 510, 2180, 3170, 4320, 3510, 3570, 10300][_floorId];
         if (_builderId == 4)
-            return [218, 92, 270, 410, 596, 858, 972, 1045][_floorId];
+            return [2180, 920, 2700, 4100, 5960, 8580, 9720, 10450][_floorId];
         if (_builderId == 5)
-            return [239, 98, 381, 551, 742, 1007, 1188, 2416][_floorId];
+            return [2390, 980, 3810, 5510, 7420, 10070, 11880, 24160][_floorId];
         revert IncorrectBuilderId();
     }
 

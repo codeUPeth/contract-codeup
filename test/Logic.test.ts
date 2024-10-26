@@ -6,7 +6,7 @@ import { BigNumber } from "ethers";
 import { ERC20, CodeupERC20, Codeup } from "../typechain-types";
 import { ROUTER } from "./abis";
 
-const COINS_PRICE = ethers.utils.parseEther("0.000001");
+const COINS_PRICE = ethers.utils.parseEther("0.0000001");
 
 const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 
@@ -164,8 +164,10 @@ describe("Codeup tests", function () {
       const tower = await gameContract.towers(player1.address);
       await gameContract.connect(player1).upgradeTower(0);
       const newTower = await gameContract.towers(player1.address);
-      expect(tower.gameETH.sub(newTower.gameETH)).to.equal(BigNumber.from(434));
-      expect(newTower.yields.sub(tower.yields)).to.equal(BigNumber.from(467));
+      expect(tower.gameETH.sub(newTower.gameETH)).to.equal(
+        BigNumber.from(4340)
+      );
+      expect(newTower.yields.sub(tower.yields)).to.equal(BigNumber.from(4670));
       const coders = await gameContract.getBuilders(player1.address);
       expect(coders[0]).to.equal(BigNumber.from(1));
     });
@@ -445,10 +447,10 @@ describe("Codeup tests", function () {
         }
       }
 
-      for (let i = 0; i < 203; i++) {
+      for (let i = 0; i < 300; i++) {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await game.connect(player2).collect();
-        if (i == 202) {
+        if (i == 224) {
           await expect(game.connect(player2).reinvest()).to.be.reverted;
           break;
         } else {
