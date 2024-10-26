@@ -263,7 +263,7 @@ contract Codeup is ReentrancyGuard {
     /// Only users with 40 builders can claim game token
     /// Claiming possible only once.
     /// @param _account Account address
-    function claimCodeupERC20(address _account) external nonReentrant {
+    function claimCodeupERC20(address _account) external {
         require(isClaimAllowed(_account), ClaimForbidden());
         require(!isClaimed[_account], AlreadyClaimed());
         address currentContract = address(this);
@@ -274,11 +274,6 @@ contract Codeup is ReentrancyGuard {
 
         /// if pool not created, create pool
         if (uniswapV2Pool == address(0)) {
-            /// Create uniswap pool
-            uniswapV2Pool = IUniswapV2Factory(uniswapV2Factory).createPair(
-                wethMemory,
-                codeupERC20Memory
-            );
             uint256 maxFirstLiquidity = MAX_FIRST_LIQUIDITY_AMOUNT;
             uint256 firstLiquidity = wethBalance > maxFirstLiquidity
                 ? maxFirstLiquidity
@@ -294,6 +289,12 @@ contract Codeup is ReentrancyGuard {
                 0,
                 currentContract
             );
+
+            uniswapV2Pool = IUniswapV2Factory(uniswapV2Factory).getPair(
+                wethMemory,
+                codeupERC20Memory
+            );
+
             emit PoolCreated(uniswapV2Pool);
         } else {
             // buy codeupERC20 for WETH

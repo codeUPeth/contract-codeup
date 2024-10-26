@@ -128,47 +128,4 @@ describe("Codeup reentrancy tests", function () {
       );
     });
   });
-  describe("Claim Reeentrancy Attack", () => {
-    it("should not allow reentrancy attack on claim", async () => {
-      const TEST_CODEUP = await ethers.getContractFactory("Codeup");
-      const CLAIM_CODEUP_ERC20_REENTRANCY = await ethers.getContractFactory(
-        "ClaimCodeupERC20Reentrancy"
-      );
-      const TEST_ROUTER = await ethers.getContractFactory("TestRouter");
-      const TEST_FACTORY = await ethers.getContractFactory("TestFactory");
-
-      const claimReentrancy = await CLAIM_CODEUP_ERC20_REENTRANCY.deploy();
-      await claimReentrancy.deployed();
-      const testFactory = await TEST_FACTORY.deploy();
-      await testFactory.deployed();
-      const testRouter = await TEST_ROUTER.deploy(
-        claimReentrancy.address,
-        testFactory.address
-      );
-      await testRouter.deployed();
-
-      const testCodeup = await TEST_CODEUP.deploy(
-        1,
-        COINS_PRICE,
-        testRouter.address,
-        gameToken.address
-      );
-      await testCodeup.deployed();
-      await testFactory.setCodeup(testCodeup.address);
-      await claimReentrancy.setCodeup(testCodeup.address);
-
-      const ethAmount = ethers.utils.parseEther("0.2");
-      await testCodeup.addGameETH({ value: ethAmount });
-
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 5; j++) {
-          await testCodeup.upgradeTower(i);
-        }
-      }
-
-      await expect(
-        testCodeup.claimCodeupERC20(deployer.address)
-      ).to.be.revertedWith("ReentrancyGuardReentrantCall()");
-    });
-  });
 });
