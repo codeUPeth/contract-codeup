@@ -5,43 +5,16 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { ERC20, CodeupERC20, Codeup } from "../typechain-types";
 import { ROUTER } from "./abis";
-
-const COINS_PRICE = ethers.utils.parseEther("0.0000001");
-
-const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
-
-const getCurrentTimeStamp = async () => {
-  const block = await ethers.provider.getBlock("latest");
-  return block.timestamp;
-};
-
-const convertETHtoCoin = (ethAmount: BigNumber) => {
-  return ethAmount.div(COINS_PRICE);
-};
-
-const calcManagerFee = (ethAmount: BigNumber) => {
-  return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
-};
-
-const calcGTtoETHRate = async (game: Codeup) => {
-  const router = await ethers.getContractAt(ROUTER, UniswapV2Router);
-
-  const weth = await game.weth();
-  const gameToken = await game.codeupERC20();
-
-  const swapAmount = ethers.utils.parseEther("1");
-
-  const wethToGT = await router.getAmountsOut(swapAmount, [weth, gameToken]);
-  const wethToGTprice = wethToGT[1];
-
-  const gtToWeth = await router.getAmountsOut(swapAmount, [gameToken, weth]);
-  const gtToWETHprice = gtToWeth[1];
-
-  return {
-    wethToGTprice,
-    gtToWETHprice,
-  };
-};
+import {
+  calcGTtoETHRate,
+  calcManagerFee,
+  COINS_PRICE,
+  convertCoinToETH,
+  convertETHtoCoin,
+  getCurrentTimeStamp,
+  MAX_COINS_AMOUNT,
+  UniswapV2Router,
+} from "./utills";
 
 describe("Codeup tests", function () {
   let gameContract: Codeup;
@@ -97,7 +70,9 @@ describe("Codeup tests", function () {
   });
   describe("Game flow", async () => {
     it("should build a tower ", async () => {
-      const ethAmount = ethers.utils.parseEther("1");
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT).div(
+        BigNumber.from(2)
+      );
       const predictedCoinsAmount = convertETHtoCoin(ethAmount);
       const predictedFee = calcManagerFee(ethAmount);
       const wethBalanceBefore = await weth.balanceOf(gameContract.address);
@@ -137,7 +112,10 @@ describe("Codeup tests", function () {
       ).to.be.reverted;
     });
     it("buy gameETH again for player1", async () => {
-      const ethAmount = ethers.utils.parseEther("1");
+      const neededCoins = await gameContract.getMaxGameEthForBuying(
+        player1.address
+      );
+      const ethAmount = convertCoinToETH(neededCoins);
       const predictedFee = calcManagerFee(ethAmount);
       const managerBalanceBefore = await weth.balanceOf(gameContract.address);
       await gameContract.connect(player1).addGameETH({ value: ethAmount });
@@ -147,7 +125,7 @@ describe("Codeup tests", function () {
       );
     });
     it("buy gameETH for player2", async () => {
-      const ethAmount = ethers.utils.parseEther("1");
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
       const predictedCoinsAmount = convertETHtoCoin(ethAmount);
       const predictedFee = calcManagerFee(ethAmount);
       const managerBalanceBefore = await weth.balanceOf(gameContract.address);
@@ -172,8 +150,6 @@ describe("Codeup tests", function () {
       expect(coders[0]).to.equal(BigNumber.from(1));
     });
     it("should by all floors and coders for player2", async () => {
-      const ethAmount = ethers.utils.parseEther("100");
-      await gameContract.connect(player2).addGameETH({ value: ethAmount });
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await gameContract.connect(player2).upgradeTower(i);
@@ -193,9 +169,8 @@ describe("Codeup tests", function () {
     });
 
     it("should inrease time for 12 hours and buy all floors for player3", async () => {
-      await gameContract
-        .connect(player3)
-        .addGameETH({ value: ethers.utils.parseEther("100") });
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
+      await gameContract.connect(player3).addGameETH({ value: ethAmount });
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await gameContract.connect(player3).upgradeTower(i);
@@ -224,7 +199,7 @@ describe("Codeup tests", function () {
     it("simulate game flow for 10 users", async () => {
       for (let k = 0; k < 10; k++) {
         await gameContract.connect(accounts[k]).addGameETH({
-          value: ethers.utils.parseEther("100"),
+          value: convertCoinToETH(MAX_COINS_AMOUNT),
         });
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
@@ -246,7 +221,7 @@ describe("Codeup tests", function () {
     it("simulate game flow for 5 users", async () => {
       for (let k = 10; k < 16; k++) {
         await gameContract.connect(accounts[k]).addGameETH({
-          value: ethers.utils.parseEther("100"),
+          value: convertCoinToETH(MAX_COINS_AMOUNT),
         });
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
@@ -319,9 +294,6 @@ describe("Codeup tests", function () {
       ).to.be.reverted;
     });
     it("should claim for user 2", async () => {
-      await gameContract
-        .connect(player2)
-        .addGameETH({ value: ethers.utils.parseEther("100") });
       const balanceETHBefore = await weth.balanceOf(player2.address);
 
       await gameContract
@@ -360,11 +332,6 @@ describe("Codeup tests", function () {
     });
     it("should reinvest earned gameETH to coins", async () => {
       const user = accounts[15];
-      await gameContract
-        .connect(user)
-        .addGameETH({ value: ethers.utils.parseEther("1") });
-
-      /// increase time for 24 minutes
       const towerStatsBefore = await gameContract.towers(user.address);
       await ethers.provider.send("evm_increaseTime", [16 * 60 * 60]);
       await ethers.provider.send("evm_mine", []);
@@ -376,6 +343,14 @@ describe("Codeup tests", function () {
     it("should revert reinvest if user has no gameETH", async () => {
       await expect(gameContract.connect(accounts[15]).reinvest()).to.be
         .reverted;
+    });
+    it("should revert force add liquidity if liquidity already added", async () => {
+      await expect(gameContract.forceAddLiquidityToPool(0, 0, 0)).to.be
+        .reverted;
+    });
+    it("should force add liquidity", async () => {
+      await ethers.provider.send("evm_increaseTime", [3600 * 24 * 8]);
+      await gameContract.forceAddLiquidityToPool(0, 0, 0);
     });
   });
   describe("Test incorrect yield calculation", async () => {
@@ -416,16 +391,25 @@ describe("Codeup tests", function () {
         gameToken.address
       );
       await game.deployed();
+      await gameToken.transfer(
+        game.address,
+        await gameToken.balanceOf(deployer.address)
+      );
+    });
+    it("should revert addGameETH if reached MaxCoinsAmount", async () => {
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
+      await game.connect(player1).addGameETH({ value: ethAmount });
+      await expect(game.connect(player1).addGameETH({ value: ethAmount })).to.be
+        .reverted;
     });
     it("should withdraw full contract balance if not enough ETH", async () => {
-      const ethAmount = ethers.utils.parseEther("0.02");
-      await game.connect(player1).addGameETH({ value: ethAmount });
-
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await game.connect(player1).upgradeTower(i);
         }
       }
+
+      await game.claimCodeupERC20(player1.address, 0, 0, 0);
 
       for (let i = 0; i < 200; i++) {
         await game.connect(player1).collect();
@@ -438,8 +422,11 @@ describe("Codeup tests", function () {
       }
     });
     it("should reinvest all eth balance if not enough ETH", async () => {
-      const ethAmount = ethers.utils.parseEther("0.01");
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
       await game.connect(player2).addGameETH({ value: ethAmount });
+      await game
+        .connect(player3)
+        .addGameETH({ value: ethAmount.div(BigNumber.from("4")) });
 
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
@@ -447,10 +434,10 @@ describe("Codeup tests", function () {
         }
       }
 
-      for (let i = 0; i < 300; i++) {
+      for (let i = 0; i < 400; i++) {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await game.connect(player2).collect();
-        if (i == 224) {
+        if (i == 222) {
           await expect(game.connect(player2).reinvest()).to.be.reverted;
           break;
         } else {

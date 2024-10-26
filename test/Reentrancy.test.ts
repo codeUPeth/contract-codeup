@@ -9,10 +9,12 @@ import {
   ReinvestReentrancy,
   ClaimCodeupERC20Reentrancy,
 } from "../typechain-types";
-
-const COINS_PRICE = ethers.utils.parseEther("0.0000001");
-
-const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
+import {
+  COINS_PRICE,
+  convertCoinToETH,
+  MAX_COINS_AMOUNT,
+  UniswapV2Router,
+} from "./utills";
 
 describe("Codeup reentrancy tests", function () {
   let gameContract: Codeup;
@@ -66,7 +68,7 @@ describe("Codeup reentrancy tests", function () {
   });
   describe("Withdraw Reeentrancy Attack", () => {
     it("should not allow reentrancy attack on withdraw", async () => {
-      const ethAmount = ethers.utils.parseEther("0.1");
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
 
       await withdrawReentrancyContract.addTokens({ value: ethAmount });
       for (let i = 0; i < 5; i++) {
@@ -111,7 +113,7 @@ describe("Codeup reentrancy tests", function () {
       await testFactory.setCodeup(testCodeup.address);
       await reinvestReentrancy.updateCodeUp(testCodeup.address);
 
-      const ethAmount = ethers.utils.parseEther("0.2");
+      const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
       await testCodeup.addGameETH({ value: ethAmount });
 
       for (let i = 0; i < 8; i++) {

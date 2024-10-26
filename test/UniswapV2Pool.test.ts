@@ -2,9 +2,12 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { CodeupERC20, Codeup } from "../typechain-types";
 import { ROUTER, WETH_ABI } from "./abis";
-
-const COINS_PRICE = ethers.utils.parseEther("0.0000001");
-const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
+import {
+  COINS_PRICE,
+  convertCoinToETH,
+  MAX_COINS_AMOUNT,
+  UniswapV2Router,
+} from "./utills";
 
 const calcPoolStats = async (game: Codeup) => {
   const router = await ethers.getContractAt(ROUTER, UniswapV2Router);
@@ -87,7 +90,7 @@ const buyAllCoders = async (
   gameContract: Codeup,
   player: SignerWithAddress
 ) => {
-  const neededETH = ethers.utils.parseEther("0.009");
+  const neededETH = convertCoinToETH(MAX_COINS_AMOUNT);
   await gameContract.connect(player).addGameETH({
     value: neededETH,
   });

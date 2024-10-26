@@ -30,6 +30,8 @@ contract Codeup is ReentrancyGuard {
         uint256 totalGameETHReceived; /// @notice User's total gameETH received
         uint8[8] builders; /// @notice User's builders count on each floor
     }
+    /// @notice Max amount of gameETH available for buying
+    uint256 public constant MAX_GAMEETH_FOR_BUYING = 78650;
     /// @notice Precision for math operations
     uint256 private constant PRECISION = 100;
     /// @notice CodeupERC20 token amount for winner
@@ -71,6 +73,8 @@ contract Codeup is ReentrancyGuard {
     uint256 public totalInvested;
     /// @notice UniswapV2 pool address WETH/CodeupERC20
     address public uniswapV2Pool;
+    /// @notice Last liquidity added timestamp
+    uint256 public lastLiquidityAdded;
 
     /// @notice account claim status
     mapping(address => bool) public isClaimed;
@@ -83,10 +87,12 @@ contract Codeup is ReentrancyGuard {
     error NotStarted();
     error TransferFailed();
     error MaxFloorsReached();
+    error MaxGameETHReached();
     error NeedToBuyPreviousBuilder();
     error ClaimForbidden();
     error AlreadyClaimed();
     error OwnerIsNotAllowed();
+    error LiquidityAddedRecently();
 
     /// @notice Emitted when user created tower
     /// @param user User's address
@@ -173,6 +179,7 @@ contract Codeup is ReentrancyGuard {
         uint256 tokenAmount = msg.value;
         uint256 gameETH = tokenAmount / gameETHPrice;
         _checkValue(gameETH);
+        _checkMaxGameETH(msg.sender, gameETH);
         address user = msg.sender;
         uint256 totalInvestedBefore = totalInvested;
         totalInvested = totalInvestedBefore + tokenAmount;
@@ -329,6 +336,8 @@ contract Codeup is ReentrancyGuard {
                 codeupERC20Memory
             );
 
+            lastLiquidityAdded = block.timestamp;
+
             emit PoolCreated(uniswapV2Pool);
         } else {
             // buy codeupERC20 for WETH
@@ -352,6 +361,8 @@ contract Codeup is ReentrancyGuard {
                     _amountBMin,
                     currentContract
                 );
+
+                lastLiquidityAdded = block.timestamp;
             }
         }
         /// Set claim status to true, user can't claim token again.
@@ -363,6 +374,48 @@ contract Codeup is ReentrancyGuard {
         uint256 tokenAmountForWinner = TOKEN_AMOUNT_FOR_WINNER;
         IERC20(codeupERC20Memory).safeTransfer(_account, tokenAmountForWinner);
         emit TokenClaimed(_account, tokenAmountForWinner);
+    }
+
+    /// @notice Function for force adding liquidity to pool. Can be called only once per week.
+    /// @param _amountAMin Min amount of WETH for adding liquidity
+    /// @param _amountBMin Min amount of CodeupERC20 for adding liquidity
+    /// @param _amountOutMin Min amount of CodeupERC20 for buying
+    function forceAddLiquidityToPool(
+        uint256 _amountAMin,
+        uint256 _amountBMin,
+        uint256 _amountOutMin
+    ) external {
+        address currentContract = address(this);
+        address wethMemory = weth;
+        address codeupERC20Memory = codeupERC20;
+        address routerMemory = uniswapV2Router;
+        uint256 wethBalance = IERC20(wethMemory).balanceOf(currentContract);
+        _checkValue(wethBalance);
+        require(
+            block.timestamp - lastLiquidityAdded > 1 weeks,
+            LiquidityAddedRecently()
+        );
+
+        uint256[] memory swapResult = _buyCodeupERC20(
+            routerMemory,
+            wethMemory,
+            codeupERC20Memory,
+            wethBalance >> 1,
+            _amountOutMin,
+            currentContract
+        );
+
+        _addLiquidity(
+            routerMemory,
+            wethMemory,
+            codeupERC20Memory,
+            swapResult[0],
+            swapResult[1],
+            _amountAMin,
+            _amountBMin,
+            currentContract
+        );
+        lastLiquidityAdded = block.timestamp;
     }
 
     /// @notice View function for checking if user can claim CodeupERC20
@@ -385,6 +438,17 @@ contract Codeup is ReentrancyGuard {
     /// @param _user User's address
     function getBuilders(address _user) public view returns (uint8[8] memory) {
         return towers[_user].builders;
+    }
+
+    /// @notice Calc user max available gameETH for buying
+    /// @param _account User's address
+    /// @return Max available gameETH for buying
+    function getMaxGameEthForBuying(
+        address _account
+    ) public view returns (uint256) {
+        Tower memory tower = towers[_account];
+        uint256 totalGameETH = tower.gameETH + tower.totalGameETHSpent;
+        return MAX_GAMEETH_FOR_BUYING - totalGameETH;
     }
 
     /// @notice Sync user tower info
@@ -520,6 +584,15 @@ contract Codeup is ReentrancyGuard {
         assembly {
             self := selfbalance()
         }
+    }
+
+    /// @notice Function for checking max gameETH for buying
+    function _checkMaxGameETH(address _account, uint256 _gameETH) private view {
+        Tower memory tower = towers[_account];
+        uint256 totalGameETH = tower.gameETH +
+            _gameETH +
+            tower.totalGameETHSpent;
+        require(totalGameETH <= MAX_GAMEETH_FOR_BUYING, MaxGameETHReached());
     }
 
     /// @notice Function for checking value is not zero
