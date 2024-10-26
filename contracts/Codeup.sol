@@ -21,12 +21,12 @@ contract Codeup is ReentrancyGuard {
 
     struct Tower {
         uint256 gameETH; /// @notice User's gameETH balance
-        uint256 gameETHForWithdraw; /// @notice User's availble for withdraw balance
+        uint256 gameETHForWithdraw; /// @notice User's available for withdraw balance
         uint256 gameETHCollected; /// @notice User's earned gameETH balance
         uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
         uint256 min; /// @notice User's time in the tower
-        uint256 totalGameETHSpend; /// @notice User's total gameETH spend
+        uint256 totalGameETHSpent; /// @notice User's total gameETH spent
         uint256 totalGameETHReceived; /// @notice User's total gameETH received
         uint8[8] builders; /// @notice User's builders count on each floor
     }
@@ -34,7 +34,7 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant PRECISION = 100;
     /// @notice CodeupERC20 token amount for winner
     uint256 private constant TOKEN_AMOUNT_FOR_WINNER = 1 ether;
-    /// @notice Token amount in ETH needed for first luqidity
+    /// @notice Token amount in ETH needed for first liquidity
     uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
@@ -88,28 +88,28 @@ contract Codeup is ReentrancyGuard {
     error AlreadyClaimed();
     error OwnerIsNotAllowed();
 
-    /// @notice Emmited when user created tower
+    /// @notice Emitted when user created tower
     /// @param user User's address
     event TowerCreated(address indexed user);
-    /// @notice Emmited when user added gameETH to the tower
+    /// @notice  Emitted when user added gameETH to the tower
     /// @param user User's address
     /// @param gameETHAmount gameETH amount
-    /// @param ethAmount Spended ETH amount
+    /// @param ethAmount Spent ETH amount
     event AddGameETH(
         address indexed user,
         uint256 gameETHAmount,
         uint256 ethAmount,
         uint256 ethForPool
     );
-    /// @notice Emmited when user withdraw gameETH
+    /// @notice Emitted when user withdraw gameETH
     /// @param user User's address
     /// @param amount gameETH amount
     event Withdraw(address indexed user, uint256 amount);
-    /// @notice Emmited when user collect earned gameETH
+    /// @notice Emitted when user collect earned gameETH
     /// @param user User's address
     /// @param amount gameETH amount
     event Collect(address indexed user, uint256 amount);
-    /// @notice Emmited when user upgrade tower
+    /// @notice Emitted when user upgrade tower
     /// @param user User's address
     /// @param floorId Floor id
     /// @param gameETH gameETH amount
@@ -120,23 +120,23 @@ contract Codeup is ReentrancyGuard {
         uint256 gameETH,
         uint256 yields
     );
-    /// @notice Emmited when user sync tower
+    /// @notice Emitted when user sync tower
     /// @param user User's address
     /// @param yields Yield amount
-    /// @param hrs Hours amount
-    event SyncTower(address indexed user, uint256 yields, uint256 hrs);
-    /// @notice Emmited when uniswapV2 pool created
+    /// @param mins  number of minutes
+    event SyncTower(address indexed user, uint256 yields, uint256 mins);
+    /// @notice Emitted when uniswapV2 pool created
     /// @param pool Pool address
     event PoolCreated(address indexed pool);
-    /// @notice Emmited when game token claimed
+    /// @notice Emitted when game token claimed
     /// @param account Account address
     /// @param amount Token amount
     event TokenClaimed(address indexed account, uint256 amount);
-    /// @notice Emmited when liquidity locked
+    /// @notice Emitted when liquidity locked
     event LiquidityLocked(uint256 indexed amount);
-    /// @notice Emmited when liquidity added
+    /// @notice Emitted when liquidity added
     event LiquidityAdded(uint256 indexed amountA, uint256 indexed amountB);
-    /// @notice Emmited when buy CodeupERC20
+    /// @notice Emitted when buy CodeupERC20
     event BuyCodeupERC20(uint256 indexed amount);
 
     /// @notice Contract constructor
@@ -174,8 +174,8 @@ contract Codeup is ReentrancyGuard {
         uint256 gameETH = tokenAmount / gameETHPrice;
         _checkValue(gameETH);
         address user = msg.sender;
-        uint256 totalInvestedBedore = totalInvested;
-        totalInvested = totalInvestedBedore + tokenAmount;
+        uint256 totalInvestedBefore = totalInvested;
+        totalInvested = totalInvestedBefore + tokenAmount;
 
         Tower storage tower = towers[user];
         if (tower.timestamp == 0) {
@@ -277,12 +277,12 @@ contract Codeup is ReentrancyGuard {
         tower.builders[_floorId]++;
         totalBuilders++;
         uint256 buildersCount = tower.builders[_floorId];
-        uint256 gameETHSpend = _getUpgradePrice(_floorId, buildersCount);
-        tower.gameETH -= gameETHSpend;
-        tower.totalGameETHSpend += gameETHSpend;
+        uint256 gameETHSpent = _getUpgradePrice(_floorId, buildersCount);
+        tower.gameETH -= gameETHSpent;
+        tower.totalGameETHSpent += gameETHSpent;
         uint256 yield = _getYield(_floorId, buildersCount);
         tower.yields += yield;
-        emit UpgradeTower(msg.sender, _floorId, gameETHSpend, yield);
+        emit UpgradeTower(msg.sender, _floorId, gameETHSpent, yield);
     }
 
     /// @notice Function perform claiming of game token
