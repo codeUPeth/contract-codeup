@@ -114,7 +114,7 @@ describe("Codeup tests", function () {
       await expect(gameContract.connect(player1).addGameETH({ value: 0 })).to.be
         .reverted;
     });
-    it("should revert buy gameETH if game not started", async () => {
+    it("should revert all actions if game not started", async () => {
       const gameFactorty = await ethers.getContractFactory("Codeup");
       const currentTime = await getCurrentTimeStamp();
       const game = await gameFactorty.deploy(
@@ -128,6 +128,13 @@ describe("Codeup tests", function () {
       const ethAmount = ethers.utils.parseEther("1");
       await expect(game.connect(player1).addGameETH({ value: ethAmount })).to.be
         .reverted;
+      await expect(game.connect(player1).upgradeTower(0)).to.be.reverted;
+      await expect(game.connect(player1).collect()).to.be.reverted;
+      await expect(game.connect(player1).withdraw()).to.be.reverted;
+      await expect(game.connect(player1).reinvest()).to.be.reverted;
+      await expect(
+        game.connect(player1).claimCodeupERC20(player1.address, 0, 0, 0)
+      ).to.be.reverted;
     });
     it("buy gameETH again for player1", async () => {
       const ethAmount = ethers.utils.parseEther("1");

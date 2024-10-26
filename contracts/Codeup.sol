@@ -154,10 +154,15 @@ contract Codeup is ReentrancyGuard {
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
     }
 
-    /// @notice Add gameETH to the tower
-    function addGameETH() external payable {
-        uint256 tokenAmount = msg.value;
+    /// @notice Modifier for checking that game already started
+    modifier onlyIfStarted() {
         require(block.timestamp > startUNIX, NotStarted());
+        _;
+    }
+
+    /// @notice Add gameETH to the tower
+    function addGameETH() external payable onlyIfStarted {
+        uint256 tokenAmount = msg.value;
         uint256 gameETH = tokenAmount / gameETHPrice;
         _checkValue(gameETH);
         address user = msg.sender;
@@ -178,7 +183,7 @@ contract Codeup is ReentrancyGuard {
     }
 
     /// @notice Withdraw earned gameETH from the tower
-    function withdraw() external {
+    function withdraw() external onlyIfStarted {
         address user = msg.sender;
         Tower storage tower = towers[user];
         uint256 contractBalance = _selfBalance();
@@ -203,7 +208,7 @@ contract Codeup is ReentrancyGuard {
     }
 
     /// @notice Collect earned gameETH from the tower to game balance
-    function collect() external {
+    function collect() external onlyIfStarted {
         address user = msg.sender;
         Tower storage tower = towers[user];
         _syncTower(user);
@@ -215,7 +220,7 @@ contract Codeup is ReentrancyGuard {
     }
 
     /// @notice Reinvest earned gameETH to the tower
-    function reinvest() external nonReentrant {
+    function reinvest() external nonReentrant onlyIfStarted {
         address user = msg.sender;
         uint256 contractBalance = _selfBalance();
         Tower storage tower = towers[user];
@@ -245,7 +250,7 @@ contract Codeup is ReentrancyGuard {
 
     /// @notice Upgrade tower
     /// @param _floorId Floor id
-    function upgradeTower(uint256 _floorId) external {
+    function upgradeTower(uint256 _floorId) external onlyIfStarted {
         require(_floorId < 8, MaxFloorsReached());
         address user = msg.sender;
         Tower storage tower = towers[user];
@@ -280,7 +285,7 @@ contract Codeup is ReentrancyGuard {
         uint256 _amountAMin,
         uint256 _amountBMin,
         uint256 _amountOutMin
-    ) external {
+    ) external onlyIfStarted {
         require(isClaimAllowed(_account), ClaimForbidden());
         require(!isClaimed[_account], AlreadyClaimed());
         address currentContract = address(this);
