@@ -255,7 +255,9 @@ contract Codeup is ReentrancyGuard {
             ? contractBalance
             : gameETHForWithdraw;
 
-        tower.gameETHForWithdraw -= availableGameETHForReinvest;
+        tower.gameETHForWithdraw -=
+            (amount / gameETHForWithdrawRate) +
+            (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
 
         emit Withdraw(user, amount);
 
