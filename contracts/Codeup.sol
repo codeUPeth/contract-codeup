@@ -466,8 +466,7 @@ contract Codeup is ReentrancyGuard {
         Tower storage tower = towers[_user];
         _checkValue(tower.timestamp);
         if (tower.yields >= 1) {
-            uint256 min = (block.timestamp / MINUTES_IN_HOUR) -
-                (tower.timestamp / MINUTES_IN_HOUR);
+            uint256 min = (block.timestamp - tower.timestamp) / MINUTES_IN_HOUR;
             if (min + tower.min > MAX_MINUTES_FOR_SYNC) {
                 min = MAX_MINUTES_FOR_SYNC - tower.min;
             }
