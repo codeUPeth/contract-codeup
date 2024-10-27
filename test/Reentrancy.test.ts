@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
@@ -114,9 +115,11 @@ describe("Codeup reentrancy tests", function () {
       await reinvestReentrancy.updateCodeUp(testCodeup.address);
 
       const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
-      await testCodeup.addGameETH({ value: ethAmount });
+      await testCodeup.addGameETH({
+        value: ethAmount.div(BigNumber.from("2")),
+      });
 
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
           await testCodeup.upgradeTower(i);
         }

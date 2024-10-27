@@ -166,6 +166,7 @@ contract Codeup is ReentrancyGuard {
         uniswapV2Router = _uniswapV2Router;
         weth = IUniswapV2Router(_uniswapV2Router).WETH();
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
+        lastLiquidityAdded = block.timestamp;
     }
 
     /// @notice Modifier for checking that game already started
@@ -241,22 +242,30 @@ contract Codeup is ReentrancyGuard {
         address user = msg.sender;
         uint256 contractBalance = _selfBalance();
         Tower storage tower = towers[user];
-        _checkValue(tower.gameETHForWithdraw);
-        uint256 gameETHForWithdraw = tower.gameETHForWithdraw *
-            gameETHForWithdrawRate;
+        uint256 gameETHForWithdrawCached = tower.gameETHForWithdraw;
+        _checkValue(gameETHForWithdrawCached);
+        uint256 maxGameEthForBuy = getMaxGameEthForBuying(user);
+        uint256 withdrawRate = gameETHForWithdrawRate;
+        uint256 predictedGameETH = (gameETHForWithdrawCached * withdrawRate) /
+            gameETHPrice;
+        uint256 availableGameETHForReinvest = predictedGameETH <=
+            maxGameEthForBuy
+            ? gameETHForWithdrawCached
+            : maxGameEthForBuy * (gameETHPrice / withdrawRate);
+        uint256 gameETHForWithdraw = availableGameETHForReinvest * withdrawRate;
         uint256 amount = contractBalance < gameETHForWithdraw
             ? contractBalance
             : gameETHForWithdraw;
-        if (amount == contractBalance) {
-            tower.gameETHForWithdraw -=
-                (amount / gameETHForWithdrawRate) +
-                (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
+
+        if (amount < contractBalance) {
+            tower.gameETHForWithdraw -= availableGameETHForReinvest;
         } else {
             tower.gameETHForWithdraw = 0;
         }
         emit Withdraw(user, amount);
 
-        uint256 gameETH = amount / gameETHPrice;
+        uint256 gameETH = (amount / gameETHPrice) +
+            (amount % gameETHPrice == 0 ? 0 : 1);
         _checkValue(gameETH);
         uint256 totalInvestedBefore = totalInvested;
         totalInvested = totalInvestedBefore + amount;

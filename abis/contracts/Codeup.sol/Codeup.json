@@ -10,7 +10,6 @@
   "error MaxFloorsReached()",
   "error MaxGameETHReached()",
   "error NeedToBuyPreviousBuilder()",
-  "error NotEnoughWETH()",
   "error NotStarted()",
   "error OwnerIsNotAllowed()",
   "error ReentrancyGuardReentrantCall()",
