@@ -508,7 +508,7 @@ describe("Codeup tests", function () {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await game.connect(player1).collect();
         await game.connect(player1).withdraw();
-        if (i == 46) {
+        if (i == 25) {
           await game.connect(player2).collect();
           await expect(game.connect(player2).reinvest()).to.be.reverted;
           break;

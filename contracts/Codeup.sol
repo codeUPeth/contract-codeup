@@ -264,8 +264,7 @@ contract Codeup is ReentrancyGuard {
         }
         emit Withdraw(user, amount);
 
-        uint256 gameETH = (amount / gameETHPrice) +
-            (amount % gameETHPrice == 0 ? 0 : 1);
+        uint256 gameETH = amount / gameETHPrice;
         _checkValue(gameETH);
         uint256 totalInvestedBefore = totalInvested;
         totalInvested = totalInvestedBefore + amount;
