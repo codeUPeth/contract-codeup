@@ -69,6 +69,10 @@ describe("Codeup tests", function () {
     });
   });
   describe("Game flow", async () => {
+    it("should revert force  add liquidity if pool not created", async () => {
+      await expect(gameContract.forceAddLiquidityToPool(0, 0, 0)).to.be
+        .reverted;
+    });
     it("should build a tower ", async () => {
       const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT).div(
         BigNumber.from(2)

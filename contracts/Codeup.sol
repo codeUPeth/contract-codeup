@@ -93,6 +93,7 @@ contract Codeup is ReentrancyGuard {
     error AlreadyClaimed();
     error OwnerIsNotAllowed();
     error LiquidityAddedRecently();
+    error PoolNotCreated();
 
     /// @notice Emitted when user created tower
     /// @param user User's address
@@ -205,13 +206,10 @@ contract Codeup is ReentrancyGuard {
         uint256 contractBalance = _selfBalance();
         uint256 gameETH = tower.gameETHForWithdraw * gameETHForWithdrawRate;
         uint256 amount = contractBalance < gameETH ? contractBalance : gameETH;
-        if (amount == contractBalance) {
-            tower.gameETHForWithdraw -=
-                (amount / gameETHForWithdrawRate) +
-                (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
-        } else {
-            tower.gameETHForWithdraw = 0;
-        }
+
+        tower.gameETHForWithdraw -=
+            (amount / gameETHForWithdrawRate) +
+            (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
 
         if (amount >= 1) {
             uint256 commission = (amount * WITHDRAW_COMMISSION) / PRECISION;
@@ -393,6 +391,7 @@ contract Codeup is ReentrancyGuard {
         uint256 _amountBMin,
         uint256 _amountOutMin
     ) external {
+        require(uniswapV2Pool != address(0), PoolNotCreated());
         address currentContract = address(this);
         address wethMemory = weth;
         address codeupERC20Memory = codeupERC20;
