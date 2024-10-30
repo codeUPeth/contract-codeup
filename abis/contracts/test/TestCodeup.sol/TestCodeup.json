@@ -12,6 +12,7 @@
   "error NeedToBuyPreviousBuilder()",
   "error NotStarted()",
   "error OwnerIsNotAllowed()",
+  "error PoolNotCreated()",
   "error ReentrancyGuardReentrantCall()",
   "error SafeERC20FailedOperation(address)",
   "error TransferFailed()",

@@ -1,0 +1,14 @@
+[profile.default]
+libs = ["node_modules", "lib"]
+out = "out"
+remappings = [
+  "hardhat/=node_modules/hardhat/",
+  "xdeployer/=node_modules/xdeployer/",
+  "@openzeppelin/=node_modules/@openzeppelin/",
+  "@ensdomains/=node_modules/@ensdomains/",
+  "eth-gas-reporter/=node_modules/eth-gas-reporter/",
+  "hardhat-deploy/=node_modules/hardhat-deploy/",
+  "@uniswap/=contracts/uniswap",
+]
+src = "contracts"
+unchecked_cheatcode_artifacts = true

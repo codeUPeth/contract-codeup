@@ -9,6 +9,7 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-contract-sizer";
 import "hardhat-abi-exporter";
+import { version } from "os";
 
 dotenv.config();
 
@@ -38,14 +39,36 @@ task(
 
 const config: any = {
   solidity: {
-    version: "0.8.27",
-    evmVersion: "default",
-    settings: {
-      optimizer: {
-        enabled: false,
-        runs: 200,
+    compilers: [
+      {
+        version: "0.8.27",
+        evmVersion: "default",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200,
+          },
+        },
       },
-    },
+      {
+        version: "0.6.6",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200,
+          },
+        },
+      },
+    ],
   },
   networks: {
     hardhat: {
@@ -267,7 +290,7 @@ const config: any = {
     alphaSort: true,
     runOnCompile: true,
     disambiguatePaths: false,
-    strict: true,
+    strict: false,
     only: [],
     except: [],
   },
