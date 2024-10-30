@@ -5,7 +5,10 @@ Welcome to **💎 CodeUP 💎**, your portal to Ethereum's rich history and prom
 ### 🎮 Game Mechanics 🎮
 [**More Details**](https://mirror.xyz/codeup.eth/-FKjkLFNTgEGUcdXjriutrqgt6w1A8VkV4lqBXOdH88)
 
-### 🕵 Audit Report 🕵
+### 🕵 Audit Report - Three Sigma 🕵
+[**Report**](https://github.com/codeUPeth/contract-codeup/blob/main/reports/CodeUP.pdf)
+
+### 🕵 Automated Audit Report - SolidityScan🕵
 [**Report**](https://solidityscan.com/published-report/block/91b45153d9793d45)
 
 ## 📜 Contracts 📜
@@ -15,8 +18,8 @@ Project smart contracts:
 - **CodeupERC20.sol** - ERC20 token for game winner's. Name: CodeUP, Symbol: CUP.
 
 ## 📜 Deployments 📜
-**Codeup** - 0x1B82536914F3fD162e1EDa12ddB2E05cd961Fe57.  
-**codeUP(CUP)** - 0xDE698Ef96434CE7b12eDdbCc92E12C0464c2E2Ed
+**Codeup** - 0xDa8Dc6e28D9E03c5bFCa3F6bD6083B7dC1bc5eB1.  
+**codeUP(CUP)** - 0xf2d8E3E94f44D048A102159b5fD229e44b3D02Ce
 
 ## 📚 Technical Stack 📚
 
@@ -72,6 +75,11 @@ yarn test:hh
 
 ```bash
 yarn coverage
+```
+
+3. To run forge tests 
+```bash
+yarn forge-test
 ```
 
 ### 💽 Compilation 💽
