@@ -25,48 +25,6 @@ abstract contract TestReentrancy {
     }
 }
 
-contract WithdrawReentrance is TestReentrancy {
-    Codeup private codeup;
-
-    constructor(address _codeup) TestReentrancy(_codeup) {
-        codeup = Codeup(_codeup);
-    }
-
-    function withdraw() external {
-        codeup.withdraw();
-    }
-
-    receive() external payable {
-        codeup.withdraw();
-    }
-}
-
-contract ReinvestReentrancy is ERC20 {
-    Codeup private codeup;
-    uint256 counter;
-
-    constructor() ERC20("Weth", "WETH") {}
-
-    function deposit() external payable {
-        if (counter == 0) {
-            _mint(msg.sender, msg.value);
-            counter++;
-        } else {
-            codeup.reinvest();
-        }
-    }
-
-    function updateCodeUp(address _codeup) external {
-        codeup = Codeup(_codeup);
-    }
-
-    function reinvest() external {
-        codeup.reinvest();
-    }
-
-    receive() external payable {}
-}
-
 contract ClaimCodeupERC20Reentrancy is ERC20 {
     Codeup private codeup;
 
