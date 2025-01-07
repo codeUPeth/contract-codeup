@@ -21,7 +21,6 @@ contract Codeup is ReentrancyGuard {
 
     struct Tower {
         uint256 gameETH; /// @notice User's gameETH balance
-        uint256 gameETHForWithdraw; /// @notice User's available for withdraw balance
         uint256 gameETHCollected; /// @notice User's earned gameETH balance
         uint256 yields; /// @notice User's yields
         uint256 timestamp; /// @notice User's registration timestamp
@@ -40,16 +39,14 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
-    /// @notice Withdraw commission 33% for rewards pool, 33% for liquidity pool
-    uint256 private constant WITHDRAW_COMMISSION = 66;
-    /// @notice Deposit commission 10% for liquidity pool
-    uint256 private constant DEPOSIT_COMMISSION = 10;
     /// @notice Min amount for adding liquidity
     uint256 private constant MIN_AMOUNT_FOR_ADDING_LIQUIDITY = 0.0001 ether;
     /// @notice Minutes in hour
     uint256 private constant MINUTES_IN_HOUR = 60;
     /// @notice Max minutes for sync tower
     uint256 private constant MAX_MINUTES_FOR_SYNC = 24;
+    /// @notice GameETH for collect rate
+    uint256 private constant GAMEETH_FOR_COLLECT_RATE = 1000;
 
     /// @notice UniswapV2Router address
     address public immutable uniswapV2Router;
@@ -61,8 +58,6 @@ contract Codeup is ReentrancyGuard {
     address public immutable weth;
     /// @notice gameETH price
     uint256 public immutable gameETHPrice;
-    /// @notice gameETH for withdraw rate
-    uint256 public immutable gameETHForWithdrawRate;
     /// @notice Start date
     uint256 public immutable startUNIX;
     /// @notice Total builders count
@@ -114,8 +109,13 @@ contract Codeup is ReentrancyGuard {
     event Withdraw(address indexed user, uint256 amount);
     /// @notice Emitted when user collect earned gameETH
     /// @param user User's address
+    /// @param gameEthReceived gameETH amount
     /// @param amount gameETH amount
-    event Collect(address indexed user, uint256 amount);
+    event Collect(
+        address indexed user,
+        uint256 gameEthReceived,
+        uint256 amount
+    );
     /// @notice Emitted when user upgrade tower
     /// @param user User's address
     /// @param floorId Floor id
@@ -162,7 +162,6 @@ contract Codeup is ReentrancyGuard {
         _checkValue(_gameETHPrice / 1000);
         startUNIX = _startDate;
         gameETHPrice = _gameETHPrice;
-        gameETHForWithdrawRate = _gameETHPrice / 1000;
         codeupERC20 = _codeupERC20;
         uniswapV2Router = _uniswapV2Router;
         weth = IUniswapV2Router(_uniswapV2Router).WETH();
@@ -181,7 +180,6 @@ contract Codeup is ReentrancyGuard {
         uint256 tokenAmount = msg.value;
         uint256 gameETH = tokenAmount / gameETHPrice;
         _checkValue(gameETH);
-        _checkMaxGameETH(msg.sender, gameETH);
         address user = msg.sender;
         uint256 totalInvestedBefore = totalInvested;
         totalInvested = totalInvestedBefore + tokenAmount;
@@ -194,33 +192,8 @@ contract Codeup is ReentrancyGuard {
         }
         tower.gameETH += gameETH;
 
-        uint256 ethAmount = (tokenAmount * DEPOSIT_COMMISSION) / PRECISION;
-        IWETH(weth).deposit{value: ethAmount}();
-        emit AddGameETH(user, gameETH, tokenAmount, ethAmount);
-    }
-
-    /// @notice Withdraw earned gameETH from the tower
-    function withdraw() external onlyIfStarted {
-        address user = msg.sender;
-        Tower storage tower = towers[user];
-        uint256 contractBalance = _selfBalance();
-        uint256 gameETH = tower.gameETHForWithdraw * gameETHForWithdrawRate;
-        uint256 amount = contractBalance < gameETH ? contractBalance : gameETH;
-
-        tower.gameETHForWithdraw -=
-            (amount / gameETHForWithdrawRate) +
-            (amount % gameETHForWithdrawRate == 0 ? 0 : 1);
-
-        if (amount >= 1) {
-            uint256 commission = (amount * WITHDRAW_COMMISSION) / PRECISION;
-            amount -= commission;
-            uint256 amountForPool = commission >> 1;
-            IWETH(weth).deposit{value: amountForPool}();
-        }
-
-        (bool success, ) = user.call{value: amount}("");
-        require(success, TransferFailed());
-        emit Withdraw(user, amount);
+        IWETH(weth).deposit{value: tokenAmount}();
+        emit AddGameETH(user, gameETH, tokenAmount, tokenAmount);
     }
 
     /// @notice Collect earned gameETH from the tower to game balance
@@ -230,46 +203,12 @@ contract Codeup is ReentrancyGuard {
         _syncTower(user);
         tower.min = 0;
         uint256 gameETHCollected = tower.gameETHCollected;
-        tower.gameETHForWithdraw += gameETHCollected;
+        uint256 collectedAmount = (gameETHCollected /
+            GAMEETH_FOR_COLLECT_RATE) +
+            (gameETHCollected % GAMEETH_FOR_COLLECT_RATE == 0 ? 0 : 1);
+        tower.gameETH += collectedAmount;
         tower.gameETHCollected = 0;
-        emit Collect(user, gameETHCollected);
-    }
-
-    /// @notice Reinvest earned gameETH to the tower
-    function reinvest() external nonReentrant onlyIfStarted {
-        address user = msg.sender;
-        uint256 contractBalance = _selfBalance();
-        Tower storage tower = towers[user];
-        uint256 gameETHForWithdrawCached = tower.gameETHForWithdraw;
-        _checkValue(gameETHForWithdrawCached);
-        uint256 maxGameEthForBuy = getMaxGameEthForBuying(user);
-        uint256 withdrawRate = gameETHForWithdrawRate;
-        uint256 predictedGameETH = (gameETHForWithdrawCached * withdrawRate) /
-            gameETHPrice;
-        uint256 availableGameETHForReinvest = predictedGameETH <=
-            maxGameEthForBuy
-            ? gameETHForWithdrawCached
-            : maxGameEthForBuy * (gameETHPrice / withdrawRate);
-        uint256 gameETHForWithdraw = availableGameETHForReinvest * withdrawRate;
-        uint256 amount = contractBalance < gameETHForWithdraw
-            ? contractBalance
-            : gameETHForWithdraw;
-
-        tower.gameETHForWithdraw -=
-            (amount / withdrawRate) +
-            (amount % withdrawRate == 0 ? 0 : 1);
-
-        emit Withdraw(user, amount);
-
-        uint256 gameETH = amount / gameETHPrice;
-        _checkValue(gameETH);
-        uint256 totalInvestedBefore = totalInvested;
-        totalInvested = totalInvestedBefore + amount;
-        tower.gameETH += gameETH;
-
-        uint256 ethAmount = (amount * DEPOSIT_COMMISSION) / PRECISION;
-        IWETH(weth).deposit{value: ethAmount}();
-        emit AddGameETH(user, gameETH, amount, ethAmount);
+        emit Collect(user, collectedAmount, gameETHCollected);
     }
 
     /// @notice Upgrade tower
@@ -582,22 +521,6 @@ contract Codeup is ReentrancyGuard {
             IERC20(uniswapV2PoolCached).safeTransfer(address(0), lpBalance);
         }
         emit LiquidityLocked(lpBalance);
-    }
-
-    /// @notice Function for getting contract balance
-    function _selfBalance() private view returns (uint256 self) {
-        assembly {
-            self := selfbalance()
-        }
-    }
-
-    /// @notice Function for checking max gameETH for buying
-    function _checkMaxGameETH(address _account, uint256 _gameETH) private view {
-        Tower memory tower = towers[_account];
-        uint256 totalGameETH = tower.gameETH +
-            _gameETH +
-            tower.totalGameETHSpent;
-        require(totalGameETH <= MAX_GAMEETH_FOR_BUYING, MaxGameETHReached());
     }
 
     /// @notice Function for checking value is not zero

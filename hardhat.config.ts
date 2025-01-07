@@ -80,7 +80,7 @@ const config: any = {
         //   blockNumber: 209739710,
         //   enabled: true,
         // },
-        url: "https://arbitrum-one.g.allthatnode.com/full/evm/c3aa51ee3624443e9b4ca727f5dddbf8",
+        url: "https://arb1.arbitrum.io/rpc",
         // The Hardhat network will by default fork from the latest mainnet block
         // To pin the block number, specify it below
         // You will need access to a node with archival data for this to work!
