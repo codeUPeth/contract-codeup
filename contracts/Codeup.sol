@@ -40,10 +40,10 @@ contract Codeup is ReentrancyGuard {
     uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
     uint256 private constant FIRST_LIQUIDITY_GAME_TOKEN = 10 ether;
-    /// @notice Withdraw commission 33% for rewards pool, 33% for liquidity pool
-    uint256 private constant WITHDRAW_COMMISSION = 66;
+    /// @notice Withdraw commission 50% for rewards pool, 50% for liquidity pool
+    uint256 private constant WITHDRAW_COMMISSION = 100;
     /// @notice Deposit commission 10% for liquidity pool
-    uint256 private constant DEPOSIT_COMMISSION = 10;
+    uint256 private constant DEPOSIT_COMMISSION = 90;
     /// @notice Min amount for adding liquidity
     uint256 private constant MIN_AMOUNT_FOR_ADDING_LIQUIDITY = 0.0001 ether;
     /// @notice Minutes in hour

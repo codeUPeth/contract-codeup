@@ -22,7 +22,7 @@ export const convertCoinToETH = (coinAmount: BigNumber) => {
 };
 
 export const calcManagerFee = (ethAmount: BigNumber) => {
-  return ethAmount.mul(BigNumber.from(10)).div(BigNumber.from(100));
+  return ethAmount.mul(BigNumber.from(90)).div(BigNumber.from(100));
 };
 
 export const calcGTtoETHRate = async (game: Codeup) => {

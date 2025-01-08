@@ -88,6 +88,17 @@ describe("Codeup tests", function () {
       expect(tower.gameETH).to.equal(predictedCoinsAmount);
       expect(await gameContract.totalTowers()).to.equal(BigNumber.from(1));
       expect(await gameContract.totalInvested()).to.be.equal(ethAmount);
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
     });
     it("should revert buy gameETH if amount is zero", async () => {
       await expect(gameContract.connect(player1).addGameETH({ value: 0 })).to.be
@@ -127,6 +138,17 @@ describe("Codeup tests", function () {
       expect(managerBalanceAfter).to.equal(
         managerBalanceBefore.add(predictedFee)
       );
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
     });
     it("buy gameETH for player2", async () => {
       const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
@@ -139,12 +161,34 @@ describe("Codeup tests", function () {
         managerBalanceBefore.add(predictedFee)
       );
       const tower = await gameContract.towers(player2.address);
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
       expect(tower.gameETH).to.equal(predictedCoinsAmount);
       expect(await gameContract.totalTowers()).to.equal(BigNumber.from(2));
     });
     it("should upgrade tower: 1 floor, 1 coder --- by player1", async () => {
       const tower = await gameContract.towers(player1.address);
       await gameContract.connect(player1).upgradeTower(0);
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
       const newTower = await gameContract.towers(player1.address);
       expect(tower.gameETH.sub(newTower.gameETH)).to.equal(
         BigNumber.from(4340)
@@ -175,6 +219,17 @@ describe("Codeup tests", function () {
     it("should inrease time for 12 hours and buy all floors for player3", async () => {
       const ethAmount = convertCoinToETH(MAX_COINS_AMOUNT);
       await gameContract.connect(player3).addGameETH({ value: ethAmount });
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
       for (let i = 0; i < 8; i++) {
         for (let j = 1; j <= 5; j++) {
           await gameContract.connect(player3).upgradeTower(i);
@@ -197,14 +252,39 @@ describe("Codeup tests", function () {
       await gameContract.connect(player2).withdraw();
       const balanceAfter = await ethers.provider.getBalance(player2.address);
       const towerInfoAfter = await gameContract.towers(player2.address);
+
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
+      console.log(balanceAfter.sub(balanceBefore).toString(), "Balance diff");
       expect(towerInfoAfter.gameETHForWithdraw).to.be.equal(BigNumber.from(0));
-      expect(balanceAfter).to.be.gt(balanceBefore);
+      expect(balanceAfter).to.be.lt(balanceBefore);
     });
     it("simulate game flow for 10 users", async () => {
       for (let k = 0; k < 10; k++) {
         await gameContract.connect(accounts[k]).addGameETH({
           value: convertCoinToETH(MAX_COINS_AMOUNT),
         });
+
+        const gameWethBsalance = await weth.balanceOf(gameContract.address);
+        const ethBalance = await ethers.provider.getBalance(
+          gameContract.address
+        );
+        console.log(
+          "ETH balance: ",
+          ethers.utils.formatEther(ethBalance.toString())
+        );
+        console.log(
+          "WETH balance: ",
+          ethers.utils.formatEther(gameWethBsalance.toString())
+        );
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
             await gameContract.connect(accounts[k]).upgradeTower(i);
@@ -227,6 +307,19 @@ describe("Codeup tests", function () {
         await gameContract.connect(accounts[k]).addGameETH({
           value: convertCoinToETH(MAX_COINS_AMOUNT),
         });
+
+        const gameWethBsalance = await weth.balanceOf(gameContract.address);
+        const ethBalance = await ethers.provider.getBalance(
+          gameContract.address
+        );
+        console.log(
+          "ETH balance: ",
+          ethers.utils.formatEther(ethBalance.toString())
+        );
+        console.log(
+          "WETH balance: ",
+          ethers.utils.formatEther(gameWethBsalance.toString())
+        );
         for (let i = 0; i < 8; i++) {
           for (let j = 1; j <= 5; j++) {
             await gameContract.connect(accounts[k]).upgradeTower(i);
@@ -243,6 +336,19 @@ describe("Codeup tests", function () {
     it("should withdraw gameETH for all users", async () => {
       for (let k = 0; k < 16; k++) {
         await gameContract.connect(accounts[k]).withdraw();
+
+        const gameWethBsalance = await weth.balanceOf(gameContract.address);
+        const ethBalance = await ethers.provider.getBalance(
+          gameContract.address
+        );
+        console.log(
+          "ETH balance: ",
+          ethers.utils.formatEther(ethBalance.toString())
+        );
+        console.log(
+          "WETH balance: ",
+          ethers.utils.formatEther(gameWethBsalance.toString())
+        );
       }
     });
     it("should withdraw gameETH for player2", async () => {
@@ -252,7 +358,17 @@ describe("Codeup tests", function () {
       await gameContract.connect(player2).collect();
       await gameContract.connect(player2).withdraw();
       const balanceAfter = await ethers.provider.getBalance(player2.address);
-      expect(balanceAfter).to.be.gte(balanceBefore);
+      const gameWethBsalance = await weth.balanceOf(gameContract.address);
+      const ethBalance = await ethers.provider.getBalance(gameContract.address);
+      console.log(
+        "ETH balance: ",
+        ethers.utils.formatEther(ethBalance.toString())
+      );
+      console.log(
+        "WETH balance: ",
+        ethers.utils.formatEther(gameWethBsalance.toString())
+      );
+      expect(balanceAfter).to.be.lt(balanceBefore);
     });
   });
   describe("Test interaction with UniswapV2 pool", async () => {
@@ -427,11 +543,24 @@ describe("Codeup tests", function () {
 
       for (let i = 0; i < 10; i++) {
         await ethers.provider.send("evm_increaseTime", [3600]);
+        const gameWethBsalance = await weth.balanceOf(game.address);
+        console.log(i);
+        const ethBalance = await ethers.provider.getBalance(game.address);
+        console.log(
+          "ETH balance: ",
+          ethers.utils.formatEther(ethBalance.toString())
+        );
+        console.log(
+          "WETH balance: ",
+          ethers.utils.formatEther(gameWethBsalance.toString())
+        );
         await game.connect(player2).collect();
         if (i == 1) {
+          console.log("Reinvest check");
           await expect(game.connect(player2).reinvest()).to.be.reverted;
           break;
         } else {
+          console.log("Reinvest");
           await game.connect(player2).reinvest();
         }
       }
@@ -509,10 +638,11 @@ describe("Codeup tests", function () {
       }
 
       for (let i = 0; i < 1000; i++) {
+        console.log(i);
         await ethers.provider.send("evm_increaseTime", [3600]);
         await game.connect(player1).collect();
         await game.connect(player1).withdraw();
-        if (i == 25) {
+        if (i == 6) {
           await game.connect(player2).collect();
           await expect(game.connect(player2).reinvest()).to.be.reverted;
           break;
