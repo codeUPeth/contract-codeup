@@ -9,9 +9,20 @@ contract TestCodeup is Codeup {
     constructor(
         uint256 _startDate,
         uint256 _gameETHPrice,
+        uint256 _tokenAmountForWinner,
         address _uniswapV2Router,
-        address _codeupERC20
-    ) Codeup(_startDate, _gameETHPrice, _uniswapV2Router, _codeupERC20) {}
+        address _codeupERC20,
+        address _owner
+    )
+        Codeup(
+            _startDate,
+            _gameETHPrice,
+            _tokenAmountForWinner,
+            _uniswapV2Router,
+            _codeupERC20,
+            _owner
+        )
+    {}
 
     function getYield(
         uint256 _floorId,

@@ -11,6 +11,7 @@ import {
   convertCoinToETH,
   convertETHtoCoin,
   getCurrentTimeStamp,
+  MAX_AMOUNT_FOR_WINNER,
   MAX_COINS_AMOUNT,
   UniswapV2Router,
 } from "./utills";
@@ -45,8 +46,10 @@ describe("Codeup tests", function () {
     gameContract = await GAME_FACTORY.deploy(
       1,
       COINS_PRICE,
+      MAX_AMOUNT_FOR_WINNER,
       UniswapV2Router,
-      gameToken.address
+      gameToken.address,
+      deployer.address
     );
     await gameContract.deployed();
 
@@ -57,13 +60,27 @@ describe("Codeup tests", function () {
     it("should revert deploy if start time is 0", async () => {
       const GAME_FACTORY = await ethers.getContractFactory("Codeup");
       await expect(
-        GAME_FACTORY.deploy(0, COINS_PRICE, UniswapV2Router, gameToken.address)
+        GAME_FACTORY.deploy(
+          0,
+          COINS_PRICE,
+          MAX_AMOUNT_FOR_WINNER,
+          UniswapV2Router,
+          gameToken.address,
+          deployer.address
+        )
       ).to.be.reverted;
     });
     it("should revert deploy if gameETH price is 0", async () => {
       const GAME_FACTORY = await ethers.getContractFactory("Codeup");
       await expect(
-        GAME_FACTORY.deploy(1, 0, UniswapV2Router, gameToken.address)
+        GAME_FACTORY.deploy(
+          1,
+          0,
+          MAX_AMOUNT_FOR_WINNER,
+          UniswapV2Router,
+          gameToken.address,
+          deployer.address
+        )
       ).to.be.reverted;
     });
   });
@@ -97,8 +114,10 @@ describe("Codeup tests", function () {
       const game = await gameFactorty.deploy(
         currentTime + 60 * 60 * 24 * 30,
         COINS_PRICE,
+        MAX_AMOUNT_FOR_WINNER,
         UniswapV2Router,
-        gameToken.address
+        gameToken.address,
+        deployer.address
       );
       await game.deployed();
 
@@ -308,8 +327,10 @@ describe("Codeup tests", function () {
       const testGame = await TEST_CODEUP_FACTORY.deploy(
         1,
         COINS_PRICE,
+        MAX_AMOUNT_FOR_WINNER,
         UniswapV2Router,
-        gameToken.address
+        gameToken.address,
+        deployer.address
       );
 
       await expect(testGame.getYield(1, 6)).to.be.revertedWith(
@@ -336,8 +357,10 @@ describe("Codeup tests", function () {
       game = await CODEUP_FACTORY.deploy(
         1,
         COINS_PRICE,
+        MAX_AMOUNT_FOR_WINNER,
         UniswapV2Router,
-        gameToken.address
+        gameToken.address,
+        deployer.address
       );
       await game.deployed();
       await gameToken.transfer(
@@ -412,6 +435,15 @@ describe("Codeup tests", function () {
         }
       }
       await expect(game.forceAddLiquidityToPool(0, 0, 0)).to.be.reverted;
+    });
+    it("should revert updating reward amount for winner if caller is not owner", async () => {
+      await expect(game.connect(player1).updateTokenAmountForWinner(1)).to.be
+        .reverted;
+    });
+    it("should update reward amount for winner", async () => {
+      await game.updateTokenAmountForWinner(1);
+      const newAmount = await game.tokenAmountForWinner();
+      expect(newAmount).to.equal(BigNumber.from(1));
     });
   });
 });

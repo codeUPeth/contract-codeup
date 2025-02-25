@@ -10,6 +10,8 @@ const deployer = process.env.DEPLOYER_ADDRESS
 const ROUTER = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 const name = "codeUP.app (CUP)";
 const symbol = "CUP";
+const MAX_AMOUNT_FOR_WINNER = ethers.utils.parseEther("100");
+const owner = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 
 async function main() {
   if (deployer === ethers.constants.AddressZero) {
@@ -25,8 +27,10 @@ async function main() {
   const game: Codeup = await GAME_FACTORY.deploy(
     startTimeUnix,
     COINS_PRICE,
+    MAX_AMOUNT_FOR_WINNER,
     ROUTER,
-    gameToken.address
+    gameToken.address,
+    owner
   );
   await game.deployTransaction.wait(5);
   console.log("Game deployed to:", game.address);
@@ -43,8 +47,10 @@ async function main() {
     await verifyContract(game.address, [
       startTimeUnix,
       COINS_PRICE,
+      MAX_AMOUNT_FOR_WINNER,
       ROUTER,
       gameToken.address,
+      owner,
     ]);
   } catch (error) {
     console.error("Error verifying contract:", error);

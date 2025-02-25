@@ -5,6 +5,7 @@ import { ROUTER } from "./abis";
 
 export const COINS_PRICE = ethers.utils.parseEther("0.0000001");
 export const MAX_COINS_AMOUNT = BigNumber.from("78650");
+export const MAX_AMOUNT_FOR_WINNER = ethers.utils.parseEther("10");
 
 export const UniswapV2Router = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24";
 

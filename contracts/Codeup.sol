@@ -6,6 +6,7 @@ import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 ///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
 ///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
@@ -16,7 +17,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /// @title Codeup contract
 /// @notice This contract is used for the Codeup game
-contract Codeup is ReentrancyGuard {
+contract Codeup is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Tower {
@@ -33,8 +34,6 @@ contract Codeup is ReentrancyGuard {
     uint256 public constant MAX_GAMEETH_FOR_BUYING = 78650;
     /// @notice Precision for math operations
     uint256 private constant PRECISION = 100;
-    /// @notice CodeupERC20 token amount for winner
-    uint256 private constant TOKEN_AMOUNT_FOR_WINNER = 1 ether;
     /// @notice Token amount in ETH needed for first liquidity
     uint256 private constant MAX_FIRST_LIQUIDITY_AMOUNT = 0.001 ether;
     /// @notice Amount of game token for first liquidity
@@ -70,6 +69,8 @@ contract Codeup is ReentrancyGuard {
     address public uniswapV2Pool;
     /// @notice Last liquidity added timestamp
     uint256 public lastLiquidityAdded;
+    /// @notice Token amount for winner
+    uint256 public tokenAmountForWinner;
 
     /// @notice account claim status
     mapping(address => bool) public isClaimed;
@@ -145,6 +146,7 @@ contract Codeup is ReentrancyGuard {
     event LiquidityAdded(uint256 indexed amountA, uint256 indexed amountB);
     /// @notice Emitted when buy CodeupERC20
     event BuyCodeupERC20(uint256 indexed amount);
+    event UpdateTokenAmountForWinner(uint256 indexed amount);
 
     /// @notice Contract constructor
     /// @param _startDate Start date
@@ -154,12 +156,16 @@ contract Codeup is ReentrancyGuard {
     constructor(
         uint256 _startDate,
         uint256 _gameETHPrice,
+        uint256 _tokenAmountForWinner,
         address _uniswapV2Router,
-        address _codeupERC20
-    ) payable {
+        address _codeupERC20,
+        address _owner
+    ) payable Ownable(_owner) {
         _checkValue(_gameETHPrice);
         _checkValue(_startDate);
         _checkValue(_gameETHPrice / 1000);
+        _checkValue(_tokenAmountForWinner);
+        tokenAmountForWinner = _tokenAmountForWinner;
         startUNIX = _startDate;
         gameETHPrice = _gameETHPrice;
         codeupERC20 = _codeupERC20;
@@ -315,9 +321,17 @@ contract Codeup is ReentrancyGuard {
         /// Lock LP tokens
         _lockLP(currentContract);
         /// Transfer CodeupERC20 amount to the user
-        uint256 tokenAmountForWinner = TOKEN_AMOUNT_FOR_WINNER;
-        IERC20(codeupERC20Memory).safeTransfer(_account, tokenAmountForWinner);
-        emit TokenClaimed(_account, tokenAmountForWinner);
+        uint256 amountForWinner = tokenAmountForWinner;
+        IERC20(codeupERC20Memory).safeTransfer(_account, amountForWinner);
+        emit TokenClaimed(_account, amountForWinner);
+    }
+
+    /// @notice Function for updating token amount for winner
+    /// @param _amount New token amount for winner
+    function updateTokenAmountForWinner(uint256 _amount) external onlyOwner {
+        _checkValue(_amount);
+        tokenAmountForWinner = _amount;
+        emit UpdateTokenAmountForWinner(_amount);
     }
 
     /// @notice Function for force adding liquidity to pool. Can be called only once per week.

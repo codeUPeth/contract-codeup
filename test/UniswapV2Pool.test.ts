@@ -5,6 +5,7 @@ import { ROUTER, WETH_ABI } from "./abis";
 import {
   COINS_PRICE,
   convertCoinToETH,
+  MAX_AMOUNT_FOR_WINNER,
   MAX_COINS_AMOUNT,
   UniswapV2Router,
 } from "./utills";
@@ -123,8 +124,10 @@ describe("UniswapV2Pool tests", function () {
     gameContract = await GAME_FACTORY.deploy(
       1,
       COINS_PRICE,
+      MAX_AMOUNT_FOR_WINNER,
       UniswapV2Router,
-      gameToken.address
+      gameToken.address,
+      deployer.address
     );
     await gameContract.deployed();
 
