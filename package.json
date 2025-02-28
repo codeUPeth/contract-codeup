@@ -45,6 +45,7 @@
     "deploy:sepolia": "npx hardhat run --network sepolia scripts/deploy.ts",
     "deploy:ethmain": "npx hardhat run --network ethMain scripts/deploy.ts",
     "deploy:bsctestnet": "npx hardhat run --network bscTestnet scripts/deploy.ts",
+    "deploy:base": "npx hardhat run --network baseMain scripts/deploy.ts",
     "deploy:bscmain": "npx hardhat run --network bscMain scripts/deploy.ts",
     "deploy:optimismtestnet": "npx hardhat run --network optimismTestnet scripts/deploy.ts",
     "deploy:optimismmain": "npx hardhat run --network optimismMain scripts/deploy.ts",

@@ -8,16 +8,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-///░█████╗░░█████╗░██████╗░███████╗██╗░░░██╗██████╗░░░░███████╗████████╗██╗░░██╗
-///██╔══██╗██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔══██╗░░░██╔════╝╚══██╔══╝██║░░██║
-///██║░░╚═╝██║░░██║██║░░██║█████╗░░██║░░░██║██████╔╝░░░█████╗░░░░░██║░░░███████║
-///██║░░██╗██║░░██║██║░░██║██╔══╝░░██║░░░██║██╔═══╝░░░░██╔══╝░░░░░██║░░░██╔══██║
-///╚█████╔╝╚█████╔╝██████╔╝███████╗╚██████╔╝██║░░░░░██╗███████╗░░░██║░░░██║░░██║
-///░╚════╝░░╚════╝░╚═════╝░╚══════╝░╚═════╝░╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝
-
 /// @title Codeup contract
 /// @notice This contract is used for the Codeup game
-contract Codeup is Ownable, ReentrancyGuard {
+contract CodeupMemeDrop is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Tower {
@@ -30,6 +23,16 @@ contract Codeup is Ownable, ReentrancyGuard {
         uint256 totalGameETHReceived; /// @notice User's total gameETH received
         uint8[8] builders; /// @notice User's builders count on each floor
     }
+
+    struct TokenDrop {
+        address tokenAddress; /// @notice Token address for drop
+        uint256 amount; /// @notice Amount of tokens for drop (fixed)
+        bool isFixed; /// @notice Drop type: true - fixed, false - random
+        bool isActive; /// @notice Whether the drop is active
+        uint256 minAmount; /// @notice Minimum amount for random drop (random)
+        uint256 maxAmount; /// @notice Maximum amount for random drop (random)
+    }
+
     /// @notice Max amount of gameETH available for buying
     uint256 public constant MAX_GAMEETH_FOR_BUYING = 78650;
     /// @notice Precision for math operations
@@ -50,14 +53,14 @@ contract Codeup is Ownable, ReentrancyGuard {
     address public immutable uniswapV2Router;
     /// @notice UniswapV2Factory address
     address public immutable uniswapV2Factory;
-    /// @notice CodeupERC20 token address
-    address public immutable codeupERC20;
     /// @notice WETH address
     address public immutable weth;
     /// @notice gameETH price
     uint256 public immutable gameETHPrice;
     /// @notice Start date
     uint256 public immutable startUNIX;
+    /// @notice CodeupERC20 token address
+    address public codeupERC20;
     /// @notice Total builders count
     uint256 public totalBuilders;
     /// @notice Total towers count
@@ -89,7 +92,7 @@ contract Codeup is Ownable, ReentrancyGuard {
     error OwnerIsNotAllowed();
     error LiquidityAddedRecently();
     error PoolNotCreated();
-
+    error GameTokenNotSet();
     /// @notice Emitted when user created tower
     /// @param user User's address
     event TowerCreated(address indexed user);
@@ -146,18 +149,50 @@ contract Codeup is Ownable, ReentrancyGuard {
     /// @notice Emitted when buy CodeupERC20
     event BuyCodeupERC20(uint256 indexed amount);
     event UpdateTokenAmountForWinner(uint256 indexed amount);
+    event SetGameToken(address indexed gameToken);
+
+    /// @notice Maximum number of drop tokens
+    uint256 public constant MAX_DROP_TOKENS = 10;
+
+    /// @notice Array of drop tokens
+    TokenDrop[] public dropTokens;
+    uint256 public dropTokensIndex;
+    /// @notice Mapping for quick token search
+    mapping(address => uint256) public tokenToIndex;
+
+    /// @notice Events for managing drops
+    event TokenDropAdded(address indexed token, uint256 amount, bool isFixed);
+    event TokenDropUpdated(
+        address indexed token,
+        uint256 amount,
+        bool isFixed,
+        bool isActive,
+        uint256 minAmount,
+        uint256 maxAmount
+    );
+    event TokenDropRemoved(address indexed token);
+    event TokenDropped(
+        address indexed user,
+        address indexed token,
+        uint256 amount
+    );
+
+    /// @notice Errors for drop functionality
+    error MaxDropTokensReached();
+    error TokenAlreadyAdded();
+    error TokenNotFound();
+    error InvalidAmount();
+    error InvalidTokenAddress();
 
     /// @notice Contract constructor
     /// @param _startDate Start date
     /// @param _gameETHPrice gameETH price
     /// @param _uniswapV2Router Weighted pool factory address
-    /// @param _codeupERC20 CodeupERC20 address
     constructor(
         uint256 _startDate,
         uint256 _gameETHPrice,
         uint256 _tokenAmountForWinner,
         address _uniswapV2Router,
-        address _codeupERC20,
         address _owner
     ) payable Ownable(_owner) {
         _checkValue(_gameETHPrice);
@@ -167,7 +202,6 @@ contract Codeup is Ownable, ReentrancyGuard {
         tokenAmountForWinner = _tokenAmountForWinner;
         startUNIX = _startDate;
         gameETHPrice = _gameETHPrice;
-        codeupERC20 = _codeupERC20;
         uniswapV2Router = _uniswapV2Router;
         weth = IUniswapV2Router(_uniswapV2Router).WETH();
         uniswapV2Factory = IUniswapV2Router(_uniswapV2Router).factory();
@@ -180,8 +214,18 @@ contract Codeup is Ownable, ReentrancyGuard {
         _;
     }
 
+    modifier onlyIfGameTokenSetted() {
+        require(codeupERC20 != address(0), GameTokenNotSet());
+        _;
+    }
+
+    function setGameToken(address _gameToken) external onlyOwner {
+        codeupERC20 = _gameToken;
+        emit SetGameToken(_gameToken);
+    }
+
     /// @notice Add gameETH to the tower
-    function addGameETH() external payable onlyIfStarted {
+    function addGameETH() external payable onlyIfStarted onlyIfGameTokenSetted {
         uint256 tokenAmount = msg.value;
         uint256 gameETH = tokenAmount / gameETHPrice;
         _checkValue(gameETH);
@@ -323,6 +367,9 @@ contract Codeup is Ownable, ReentrancyGuard {
         uint256 amountForWinner = tokenAmountForWinner;
         IERC20(codeupERC20Memory).safeTransfer(_account, amountForWinner);
         emit TokenClaimed(_account, amountForWinner);
+
+        // Process additional token drops
+        _processTokenDrop(_account);
     }
 
     /// @notice Function for updating token amount for winner
@@ -374,6 +421,102 @@ contract Codeup is Ownable, ReentrancyGuard {
             currentContract
         );
         lastLiquidityAdded = block.timestamp;
+    }
+
+    /// @notice Add new token for drop
+    function addDropToken(
+        address _token,
+        uint256 _amount,
+        bool _isFixed,
+        uint256 _minAmount,
+        uint256 _maxAmount
+    ) external onlyOwner {
+        require(_token != address(0), InvalidTokenAddress());
+        require(dropTokens.length < MAX_DROP_TOKENS, MaxDropTokensReached());
+        require(tokenToIndex[_token] == 0, TokenAlreadyAdded());
+
+        if (!_isFixed) {
+            require(_minAmount < _maxAmount, InvalidAmount());
+        } else {
+            require(_amount != 0, InvalidAmount());
+        }
+
+        dropTokens.push(
+            TokenDrop({
+                tokenAddress: _token,
+                amount: _amount,
+                isFixed: _isFixed,
+                isActive: true,
+                minAmount: _minAmount,
+                maxAmount: _maxAmount
+            })
+        );
+
+        tokenToIndex[_token] = dropTokens.length;
+        dropTokensIndex = dropTokens.length;
+        emit TokenDropAdded(_token, _amount, _isFixed);
+    }
+
+    /// @notice Update token drop parameters
+    /// @param _token Token address
+    /// @param _amount Amount of tokens for drop
+    /// @param _isFixed Drop type: true - fixed, false - random
+    /// @param _isActive Whether the drop is active
+    /// @param _minAmount Minimum amount for random drop
+    /// @param _maxAmount Maximum amount for random drop
+    function updateDropToken(
+        address _token,
+        uint256 _amount,
+        bool _isFixed,
+        bool _isActive,
+        uint256 _minAmount,
+        uint256 _maxAmount
+    ) external onlyOwner {
+        uint256 index = tokenToIndex[_token];
+        require(index != 0, TokenNotFound());
+        require(_amount != 0, InvalidAmount());
+
+        TokenDrop storage drop = dropTokens[index - 1];
+
+        if (!_isFixed) {
+            require(_minAmount < _maxAmount, InvalidAmount());
+            drop.minAmount = _minAmount;
+            drop.maxAmount = _maxAmount;
+            drop.amount = _amount;
+        } else {
+            drop.amount = _amount;
+            drop.minAmount = _minAmount;
+            drop.maxAmount = _minAmount;
+        }
+
+        drop.isFixed = _isFixed;
+        drop.isActive = _isActive;
+
+        emit TokenDropUpdated(
+            _token,
+            _amount,
+            _isFixed,
+            _isActive,
+            drop.minAmount,
+            drop.maxAmount
+        );
+    }
+
+    /// @notice Remove token from drop
+    function removeDropToken(address _token) external onlyOwner {
+        uint256 index = tokenToIndex[_token];
+        require(index != 0, TokenNotFound());
+
+        uint256 lastIndex = dropTokens.length - 1;
+        if (index - 1 != lastIndex) {
+            dropTokens[index - 1] = dropTokens[lastIndex];
+            tokenToIndex[dropTokens[lastIndex].tokenAddress] = index;
+        }
+        dropTokens.pop();
+        delete tokenToIndex[_token];
+        dropTokensIndex = dropTokens.length;
+
+        emit TokenDropRemoved(_token);
     }
 
     /// @notice View function for checking if user can claim CodeupERC20
@@ -539,5 +682,64 @@ contract Codeup is Ownable, ReentrancyGuard {
     /// @notice Function for checking value is not zero
     function _checkValue(uint256 _argument) private pure {
         require(_argument != 0, ZeroValue());
+    }
+
+    /// @notice Function for generating pseudo-random number
+    function _generateRandomNumber() private view returns (uint256) {
+        return
+            uint256(
+                keccak256(
+                    abi.encodePacked(
+                        totalInvested,
+                        totalTowers,
+                        block.timestamp,
+                        block.prevrandao,
+                        block.number,
+                        msg.sender,
+                        address(this)
+                    )
+                )
+            );
+    }
+
+    /// @notice Internal function for processing token drops
+    function _processTokenDrop(address _user) private {
+        uint256 length = dropTokens.length;
+        if (length == 0) return;
+
+        for (uint256 i = 0; i < length; i++) {
+            TokenDrop memory drop = dropTokens[i];
+            if (!drop.isActive) continue;
+
+            uint256 balance = IERC20(drop.tokenAddress).balanceOf(
+                address(this)
+            );
+            if (balance == 0) continue;
+
+            uint256 amount;
+            if (drop.isFixed) {
+                amount = drop.amount;
+            } else {
+                uint256 rand = uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            _generateRandomNumber(),
+                            drop.tokenAddress,
+                            i
+                        )
+                    )
+                );
+                amount =
+                    drop.minAmount +
+                    (rand % (drop.maxAmount - drop.minAmount + 1));
+            }
+
+            amount = amount > balance ? balance : amount;
+
+            if (amount > 0) {
+                IERC20(drop.tokenAddress).safeTransfer(_user, amount);
+                emit TokenDropped(_user, drop.tokenAddress, amount);
+            }
+        }
     }
 }

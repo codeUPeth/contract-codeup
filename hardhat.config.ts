@@ -9,7 +9,6 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-contract-sizer";
 import "hardhat-abi-exporter";
-import { version } from "os";
 
 dotenv.config();
 
@@ -349,6 +348,16 @@ const config: any = {
       xdai: "wagmi",
       sokol: "wagmi",
     },
+    customChains: [
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.basescan.org/api",
+          browserURL: "https://basescan.org/",
+        },
+      },
+    ],
   },
 };
 
