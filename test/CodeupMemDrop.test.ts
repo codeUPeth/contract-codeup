@@ -190,6 +190,30 @@ describe("CodeupMemeDrop tests", function () {
         )
       ).to.be.reverted;
     });
+    it("should remove drop token at index 0", async () => {
+      const dropTokenIndexBefore = await gameContract.dropTokensIndex();
+      const tokensListBefore = await gameContract.getAllDropTokens();
+      await gameContract.removeDropToken(dropTokenFixed.address);
+      const tokensListAfter = await gameContract.getAllDropTokens();
+      const dropTokenIndexAfter = await gameContract.dropTokensIndex();
+      console.log(tokensListBefore, "before");
+      console.log(tokensListAfter, "after");
+      expect(dropTokenIndexAfter).to.equal(dropTokenIndexBefore.sub(1));
+      expect(tokensListAfter.length).to.equal(tokensListBefore.length - 1);
+      expect(tokensListAfter[0].tokenAddress).to.equal(dropTokenRandom.address);
+    });
+    it("should revert remove drop token if token address is not in the list", async () => {
+      await expect(gameContract.removeDropToken(dropTokenFixed.address)).to.be
+        .reverted;
+    });
+    it("should revert remove drop token if token address is 0", async () => {
+      await expect(gameContract.removeDropToken(ethers.constants.AddressZero))
+        .to.be.reverted;
+    });
+    it("should revert remove drop token if index is greater than drop tokens index", async () => {
+      await expect(gameContract.removeDropToken(dropTokenFixed.address)).to.be
+        .reverted;
+    });
   });
   describe("Game flow", async () => {
     it("should revert force  add liquidity if pool not created", async () => {

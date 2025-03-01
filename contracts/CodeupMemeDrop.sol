@@ -552,6 +552,77 @@ contract CodeupMemeDrop is Ownable, ReentrancyGuard {
         return MAX_GAMEETH_FOR_BUYING - totalGameETH;
     }
 
+    /// @notice Get information about specific drop token
+    /// @param _token Token address
+    /// @return tokenAddress Token address
+    /// @return amount Amount of tokens for drop
+    /// @return isFixed Drop type
+    /// @return isActive Whether the drop is active
+    /// @return minAmount Minimum amount for random drop
+    /// @return maxAmount Maximum amount for random drop
+    function getDropToken(
+        address _token
+    )
+        external
+        view
+        returns (
+            address tokenAddress,
+            uint256 amount,
+            bool isFixed,
+            bool isActive,
+            uint256 minAmount,
+            uint256 maxAmount
+        )
+    {
+        uint256 index = tokenToIndex[_token];
+        require(index != 0, TokenNotFound());
+
+        TokenDrop memory drop = dropTokens[index - 1];
+        return (
+            drop.tokenAddress,
+            drop.amount,
+            drop.isFixed,
+            drop.isActive,
+            drop.minAmount,
+            drop.maxAmount
+        );
+    }
+
+    /// @notice Get all drop tokens
+    /// @return allDrops Array of all drop tokens
+    function getAllDropTokens() external view returns (TokenDrop[] memory) {
+        return dropTokens;
+    }
+
+    /// @notice Get all active drop tokens
+    /// @return activeDrops Array of active drop tokens
+    function getActiveDropTokens()
+        external
+        view
+        returns (TokenDrop[] memory activeDrops)
+    {
+        uint256 activeCount = 0;
+
+        // First, count active tokens
+        for (uint256 i = 0; i < dropTokens.length; i++) {
+            if (dropTokens[i].isActive) {
+                activeCount++;
+            }
+        }
+
+        // Create array of correct size
+        activeDrops = new TokenDrop[](activeCount);
+
+        // Fill array with active tokens
+        uint256 currentIndex = 0;
+        for (uint256 i = 0; i < dropTokens.length; i++) {
+            if (dropTokens[i].isActive) {
+                activeDrops[currentIndex] = dropTokens[i];
+                currentIndex++;
+            }
+        }
+    }
+
     /// @notice Sync user tower info
     /// @param _user User's address
     function _syncTower(address _user) internal {
